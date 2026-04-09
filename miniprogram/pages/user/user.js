@@ -1,0 +1,98 @@
+const service = require('../../utils/service');
+
+Page({
+  data: {
+    loading: true,
+    requesting: false,
+    staffProfile: {
+      isStaff: false,
+      isPending: false,
+      isRejected: false,
+      status: 'none',
+      staffName: '',
+      groupId: 0,
+      groupName: ''
+    },
+    permissions: {
+      isAdmin: false
+    },
+    groupSchedules: [],
+    myAppointments: [],
+    staffBindingCodeEnabled: false,
+    requestForm: {
+      staffName: '',
+      bindingCode: ''
+    }
+  },
+
+  onShow() {
+    this.loadData();
+  },
+
+  onPullDownRefresh() {
+    this.loadData();
+  },
+
+  async loadData() {
+    this.setData({ loading: true });
+    try {
+      const data = await service.getAppData();
+      this.setData({
+        loading: false,
+        staffProfile: data.staffProfile,
+        permissions: data.permissions || { isAdmin: false },
+        groupSchedules: data.groupSchedules,
+        myAppointments: data.myAppointments,
+        staffBindingCodeEnabled: Boolean(data.staffBindingCodeEnabled),
+        'requestForm.staffName': data.staffProfile.staffName || ''
+      });
+    } catch (error) {
+      this.setData({ loading: false });
+      wx.showToast({ title: error.message || '加载失败', icon: 'none' });
+    } finally {
+      wx.stopPullDownRefresh();
+    }
+  },
+
+  updateRequestName(e) {
+    this.setData({ 'requestForm.staffName': e.detail.value });
+  },
+
+  updateBindingCode(e) {
+    this.setData({ 'requestForm.bindingCode': e.detail.value });
+  },
+
+  async submitStaffRequest() {
+    if (this.data.requesting) {
+      return;
+    }
+    this.setData({ requesting: true });
+    try {
+      await service.submitStaffRequest(this.data.requestForm);
+      wx.showToast({ title: '申请已提交', icon: 'success' });
+      this.setData({ 'requestForm.bindingCode': '' });
+      await this.loadData();
+    } catch (error) {
+      wx.showToast({ title: error.message || '提交失败', icon: 'none' });
+    } finally {
+      this.setData({ requesting: false });
+    }
+  },
+
+  async finishAppointment(e) {
+    const appointmentId = e.currentTarget.dataset.id;
+    try {
+      await service.completeAppointment({ appointmentId });
+      wx.showToast({ title: '已结单', icon: 'success' });
+      await this.loadData();
+    } catch (error) {
+      wx.showToast({ title: error.message || '结单失败', icon: 'none' });
+    }
+  },
+
+  goAdmin() {
+    wx.navigateTo({
+      url: '/pages/admin/admin'
+    });
+  }
+});

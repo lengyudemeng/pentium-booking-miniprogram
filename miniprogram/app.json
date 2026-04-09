@@ -1,0 +1,44 @@
+{
+  "pages": [
+    "pages/index/index",
+    "pages/booking/booking",
+    "pages/user/user",
+    "pages/admin/admin",
+    "pages/admin/staff-requests/staff-requests",
+    "pages/admin/staff-groups/staff-groups",
+    "pages/admin/semester-config/semester-config",
+    "pages/admin/duty-checkin/duty-checkin",
+    "pages/checkin/checkin",
+    "pages/privacy/privacy",
+    "pages/agreement/agreement"
+  ],
+  "window": {
+    "navigationBarTitleText": "每周六预约",
+    "navigationBarBackgroundColor": "#2563eb",
+    "navigationBarTextStyle": "white",
+    "backgroundColor": "#f4f7fb",
+    "backgroundTextStyle": "light"
+  },
+  "style": "v2",
+  "sitemapLocation": "sitemap.json",
+  "tabBar": {
+    "color": "#6b7280",
+    "selectedColor": "#2563eb",
+    "backgroundColor": "#ffffff",
+    "borderStyle": "black",
+    "list": [
+      {
+        "pagePath": "pages/index/index",
+        "text": "首页"
+      },
+      {
+        "pagePath": "pages/booking/booking",
+        "text": "预约"
+      },
+      {
+        "pagePath": "pages/user/user",
+        "text": "我的"
+      }
+    ]
+  }
+}

@@ -1,0 +1,77 @@
+<view class="page">
+  <view class="card hero-card">
+    <view class="hero-text">
+      <view class="hero-title">奔腾特勤队预约服务</view>
+      <view class="hero-subtitle">每周六晚 19:00-21:00 提供值班支持，地点请以实际通知为准。</view>
+      <button class="primary-btn hero-btn" bindtap="goBooking">立即预约</button>
+    </view>
+    <image class="hero-image" src="/assets/banner.png" mode="aspectFill" />
+  </view>
+
+  <view class="card">
+    <view class="section-title">当前选中日期概览</view>
+    <view class="section-subtitle">默认展示最近一次开放预约的周六：{{selectedDateLabel}}</view>
+    <view class="stats-grid top-gap">
+      <view class="stat-item">
+        <view class="stat-value">{{summary.totalCount}}</view>
+        <view class="stat-label">总名额</view>
+      </view>
+      <view class="stat-item">
+        <view class="stat-value blue">{{summary.availableCount}}</view>
+        <view class="stat-label">剩余名额</view>
+      </view>
+      <view class="stat-item">
+        <view class="stat-value orange">{{summary.bookedCount}}</view>
+        <view class="stat-label">已预约</view>
+      </view>
+      <view class="stat-item">
+        <view class="stat-value green">{{summary.completedCount}}</view>
+        <view class="stat-label">已完成</view>
+      </view>
+    </view>
+  </view>
+
+  <view class="card">
+    <view class="section-title">本学期累计概览</view>
+    <view class="section-subtitle">从学期开始日期起统计累计预约与结单数量。</view>
+    <view class="stats-grid top-gap">
+      <view class="stat-item">
+        <view class="stat-value orange">{{semesterSummary.bookedCount}}</view>
+        <view class="stat-label">累计已预约</view>
+      </view>
+      <view class="stat-item">
+        <view class="stat-value green">{{semesterSummary.completedCount}}</view>
+        <view class="stat-label">累计已结单</view>
+      </view>
+    </view>
+  </view>
+
+  <view class="card">
+    <view class="section-title">未来值班安排</view>
+    <view class="list-gap">
+      <block wx:for="{{scheduleOverview}}" wx:key="serviceDate" wx:for-item="schedule">
+        <view class="schedule-item">
+          <view class="schedule-top">
+            <view>
+              <view class="schedule-title">{{schedule.serviceDateLabel}}</view>
+              <view class="schedule-desc">{{schedule.description}}</view>
+            </view>
+            <view class="schedule-count">{{schedule.summaryText}}</view>
+          </view>
+          <view class="slot-row">
+            <block wx:for="{{schedule.slots}}" wx:key="id" wx:for-item="slot">
+              <view class="slot-pill slot-pill-{{slot.status}}">{{slot.label}} {{slot.statusText}}</view>
+            </block>
+          </view>
+        </view>
+      </block>
+    </view>
+  </view>
+
+  <view class="card">
+    <view class="section-title">服务说明</view>
+    <view class="info-line">1. 当前仅开放周六 19:00-21:00 的两个预约时段，每个时段最多 10 人。</view>
+    <view class="info-line">2. 提交预约前需阅读并同意《隐私政策》《用户协议》。</view>
+    <view class="info-line">3. 服务人员权限已改为管理员审批制，管理员权限已改为 OpenID 白名单控制。</view>
+  </view>
+</view>

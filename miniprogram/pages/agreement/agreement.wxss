@@ -1,0 +1,5 @@
+.policy-line {
+  color: #374151;
+  line-height: 1.9;
+  margin-bottom: 12rpx;
+}

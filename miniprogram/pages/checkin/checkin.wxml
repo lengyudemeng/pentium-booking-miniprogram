@@ -1,0 +1,38 @@
+<view class="page">
+  <view class="card">
+    <view class="section-title">值班签到</view>
+    <view class="section-subtitle">扫描签到二维码后，系统会自动校验并更新你的签到状态。</view>
+  </view>
+
+  <view wx:if="{{!serviceDate && !loading}}" class="card">
+    <view class="empty-text">未识别到签到日期，请重新扫描二维码。</view>
+  </view>
+
+  <view wx:elif="{{checkInInfo}}" class="card">
+    <view class="info-title">{{checkInInfo.serviceDateLabel}}</view>
+    <view class="record-desc">第{{checkInInfo.weekNo}}周</view>
+    <view class="record-desc">值班组别：{{checkInInfo.groupName}}</view>
+    <view class="record-desc">当前成员：{{checkInInfo.staffProfile.staffName || '未填写姓名'}}</view>
+
+    <view wx:if="{{submitting}}" class="result-box result-primary">
+      <view class="result-title">正在处理签到</view>
+      <view class="record-desc">请稍候，系统正在更新你的签到状态。</view>
+    </view>
+
+    <view wx:elif="{{checkInInfo.signed}}" class="result-box result-success">
+      <view class="result-title">你已完成签到</view>
+      <view class="record-desc">签到时间：{{checkInInfo.signedAtLabel}}</view>
+    </view>
+
+    <view wx:elif="{{!checkInInfo.canCheckIn}}" class="result-box result-muted">
+      <view class="result-title">当前无法签到</view>
+      <view class="record-desc">{{checkInInfo.disabledReason}}</view>
+    </view>
+
+    <view wx:else class="result-box result-primary">
+      <view class="result-title">{{checkInInfo.dutyText}}</view>
+      <view class="record-desc">如未自动签到，可点击下方按钮手动重试。</view>
+      <button class="primary-btn top-gap" bindtap="submitCheckIn" loading="{{submitting}}">重新签到</button>
+    </view>
+  </view>
+</view>

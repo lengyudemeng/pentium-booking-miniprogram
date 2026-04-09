@@ -1,0 +1,97 @@
+<view class="page">
+  <view class="card">
+    <view class="section-title">我的信息</view>
+    <view class="profile-line">部员状态：
+      <text wx:if="{{staffProfile.isStaff}}" class="highlight">已通过审批</text>
+      <text wx:elif="{{staffProfile.isPending}}" class="pending-text">审批中</text>
+      <text wx:elif="{{staffProfile.isRejected}}" class="danger-text">未通过</text>
+      <text wx:else class="muted">未申请</text>
+    </view>
+    <view wx:if="{{staffProfile.staffName}}" class="profile-line">姓名：{{staffProfile.staffName}}</view>
+    <view wx:if="{{staffProfile.isStaff}}" class="profile-line">当前分组：{{staffProfile.groupName || '未分配'}}</view>
+    <view wx:if="{{staffProfile.isRejected && staffProfile.rejectReason}}" class="profile-line">驳回原因：{{staffProfile.rejectReason}}</view>
+  </view>
+
+  <view class="card" wx:if="{{permissions.isAdmin}}">
+    <view class="section-title">管理员入口</view>
+    <view class="section-subtitle">管理员权限已改为 OpenID 白名单控制，普通用户不会看到后台入口。</view>
+    <button class="primary-btn" bindtap="goAdmin">进入管理员后台</button>
+  </view>
+
+  <view class="card" wx:if="{{!staffProfile.isStaff}}">
+    <view class="section-title">申请服务人员权限</view>
+    <view class="section-subtitle">提交申请前需先输入管理员设定的绑定码。提交后仍需管理员审批并分配组别后才能生效。</view>
+    <view wx:if="{{!staffBindingCodeEnabled}}" class="empty-text">管理员尚未设置绑定码，请联系管理员后再申请。</view>
+    <view wx:else>
+      <view class="field">
+        <text class="field-label">姓名</text>
+        <input class="field-input" placeholder="请输入你的姓名" value="{{requestForm.staffName}}" bindinput="updateRequestName" />
+      </view>
+      <view class="field">
+        <text class="field-label">绑定码</text>
+        <input class="field-input" password placeholder="请输入管理员提供的绑定码" value="{{requestForm.bindingCode}}" bindinput="updateBindingCode" />
+      </view>
+      <button class="primary-btn" loading="{{requesting}}" bindtap="submitStaffRequest">
+        {{staffProfile.isPending ? '更新申请信息' : '提交申请'}}
+      </button>
+    </view>
+  </view>
+
+  <view class="card" wx:if="{{staffProfile.isStaff}}">
+    <view class="section-title">我的值班预约</view>
+    <view wx:if="{{!staffProfile.groupId}}" class="empty-text">管理员尚未为你分配分组</view>
+    <view wx:elif="{{groupSchedules.length === 0}}" class="empty-text">当前没有匹配到你的值班日期</view>
+    <view wx:else class="list-gap">
+      <block wx:for="{{groupSchedules}}" wx:key="serviceDate" wx:for-item="schedule">
+        <view class="schedule-card">
+          <view class="schedule-head">
+            <view>
+              <view class="schedule-title">{{schedule.serviceDateLabel}}</view>
+              <view class="schedule-desc">{{schedule.description}}</view>
+            </view>
+            <view class="schedule-summary">{{schedule.summaryText}}</view>
+          </view>
+          <view wx:if="{{schedule.appointments.length === 0}}" class="empty-inline">当前日期暂无预约</view>
+          <view wx:else class="list-gap inner-gap">
+            <block wx:for="{{schedule.appointments}}" wx:key="id" wx:for-item="appointment">
+              <view class="record-item">
+                <view class="record-top">
+                  <view class="record-title">{{appointment.slotLabel}}</view>
+                  <view class="tag tag-{{appointment.status === 'completed' ? 'completed' : 'booked'}}">{{appointment.statusText}}</view>
+                </view>
+                <view class="record-desc">类型：{{appointment.appointmentType || '未填写'}}</view>
+                <view class="record-desc">用户：{{appointment.name}}</view>
+                <view class="record-desc">手机号：{{appointment.phone}}</view>
+                <view class="record-desc">需求：{{appointment.request}}</view>
+                <view wx:if="{{appointment.status === 'booked'}}" class="action-area">
+                  <button class="ghost-btn" bindtap="finishAppointment" data-id="{{appointment.id}}">结单</button>
+                </view>
+                <view wx:if="{{appointment.closedBy}}" class="record-desc">结单人：{{appointment.closedBy}}</view>
+              </view>
+            </block>
+          </view>
+        </view>
+      </block>
+    </view>
+  </view>
+
+  <view class="card">
+    <view class="section-title">我的预约历史</view>
+    <view wx:if="{{myAppointments.length === 0}}" class="empty-text">暂无预约历史</view>
+    <view wx:else class="list-gap">
+      <block wx:for="{{myAppointments}}" wx:key="id" wx:for-item="appointment">
+        <view class="record-item">
+          <view class="record-top">
+            <view class="record-title">{{appointment.serviceDateLabel}} {{appointment.slotLabel}}</view>
+            <view class="tag tag-{{appointment.status === 'completed' ? 'completed' : (appointment.status === 'cancelled' ? 'closed' : 'booked')}}">{{appointment.statusText}}</view>
+          </view>
+          <view class="record-desc">类型：{{appointment.appointmentType || '未填写'}}</view>
+          <view class="record-desc">姓名：{{appointment.name}}</view>
+          <view class="record-desc">手机号：{{appointment.phoneMasked}}</view>
+          <view class="record-desc">需求：{{appointment.request}}</view>
+          <view class="record-desc">值班组别：{{appointment.groupName || '未排班'}}</view>
+        </view>
+      </block>
+    </view>
+  </view>
+</view>

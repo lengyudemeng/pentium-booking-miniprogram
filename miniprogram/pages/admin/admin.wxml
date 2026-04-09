@@ -1,0 +1,56 @@
+<view class="page">
+  <view class="card">
+    <view class="section-title">管理员后台</view>
+    <view class="section-subtitle">支持部员审批、分组管理、学期轮值配置和值班签到，点击下方入口进入管理。</view>
+  </view>
+
+  <view class="card">
+    <view class="section-title">管理入口</view>
+    <view wx:if="{{loading}}" class="empty-text">加载中...</view>
+    <view wx:else class="list-gap">
+      <view class="nav-card" bindtap="goStaffRequests">
+        <view class="nav-card-head">
+          <view>
+            <view class="nav-card-title">部员审批</view>
+            <view class="nav-card-desc">处理待审批申请</view>
+          </view>
+          <view class="nav-card-arrow">></view>
+        </view>
+        <view class="nav-card-meta">当前待审批：{{staffRequestCount}} 人</view>
+      </view>
+
+      <view class="nav-card" bindtap="goStaffGroups">
+        <view class="nav-card-head">
+          <view>
+            <view class="nav-card-title">部员分组管理</view>
+            <view class="nav-card-desc">调整已审批部员分组</view>
+          </view>
+          <view class="nav-card-arrow">></view>
+        </view>
+        <view class="nav-card-meta">当前已审批：{{staffMemberCount}} 人</view>
+      </view>
+
+      <view class="nav-card" bindtap="goSemesterConfig">
+        <view class="nav-card-head">
+          <view>
+            <view class="nav-card-title">学期轮值配置与预约开关</view>
+            <view class="nav-card-desc">配置本学期值班时间</view>
+          </view>
+          <view class="nav-card-arrow">></view>
+        </view>
+        <view class="nav-card-meta">学期开始：{{semesterConfig.semesterStartDate || '未设置'}} ｜ 值班起始周：第{{semesterConfig.dutyStartWeek}}周</view>
+      </view>
+
+      <view class="nav-card" bindtap="goDutyCheckin">
+        <view class="nav-card-head">
+          <view>
+            <view class="nav-card-title">值班签到</view>
+            <view class="nav-card-desc">查看值班签到二维码以及签到情况</view>
+          </view>
+          <view class="nav-card-arrow"></view>
+        </view>
+        <view class="nav-card-meta">支持扫码签到，并按值班日期查看签到成员</view>
+      </view>
+    </view>
+  </view>
+</view>

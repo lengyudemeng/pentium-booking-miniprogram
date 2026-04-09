@@ -1,0 +1,1 @@
+require('./miniprogram/app.js');

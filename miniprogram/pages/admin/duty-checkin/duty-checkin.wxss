@@ -1,0 +1,96 @@
+@import "../admin.wxss";
+
+.date-tabs {
+  white-space: nowrap;
+}
+
+.date-tab {
+  display: inline-flex;
+  flex-direction: column;
+  justify-content: center;
+  min-width: 260rpx;
+  padding: 20rpx 24rpx;
+  margin-right: 16rpx;
+  border-radius: 20rpx;
+  background: #f8fafc;
+  border: 2rpx solid transparent;
+  box-sizing: border-box;
+}
+
+.date-tab-active {
+  background: #eff6ff;
+  border-color: #93c5fd;
+}
+
+.date-tab-title {
+  font-size: 28rpx;
+  font-weight: 700;
+}
+
+.date-tab-desc,
+.date-tab-meta {
+  margin-top: 8rpx;
+  color: #6b7280;
+  font-size: 24rpx;
+}
+
+.qr-image {
+  width: 420rpx;
+  height: 420rpx;
+  display: block;
+  margin: 24rpx auto 0;
+}
+
+.center-text {
+  text-align: center;
+}
+
+.summary-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 16rpx;
+  margin-top: 20rpx;
+}
+
+.summary-pill {
+  padding: 12rpx 22rpx;
+  border-radius: 999rpx;
+  font-size: 24rpx;
+  font-weight: 600;
+}
+
+.summary-pill-green {
+  background: #dcfce7;
+  color: #15803d;
+}
+
+.summary-pill-gray {
+  background: #f3f4f6;
+  color: #6b7280;
+}
+
+.status-card {
+  background: #f8fafc;
+  border-radius: 20rpx;
+  padding: 24rpx;
+}
+
+.member-item {
+  border-radius: 16rpx;
+  padding: 20rpx;
+}
+
+.member-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 20rpx;
+}
+
+.signed-item {
+  background: #ecfdf5;
+}
+
+.unsigned-item {
+  background: #f9fafb;
+}

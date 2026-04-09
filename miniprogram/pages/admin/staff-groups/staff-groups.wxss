@@ -1,0 +1,44 @@
+@import "../admin.wxss";
+
+.batch-card {
+  background: #f8fafc;
+  border-radius: 20rpx;
+  padding: 24rpx;
+}
+
+.selected-card {
+  background: #eff6ff;
+  border: 2rpx solid #93c5fd;
+}
+
+.batch-head,
+.member-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 20rpx;
+}
+
+.select-row {
+  margin-top: 20rpx;
+  padding: 18rpx 20rpx;
+  background: #ffffff;
+  border: 2rpx solid #e5e7eb;
+  border-radius: 16rpx;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 20rpx;
+}
+
+.select-text {
+  color: #374151;
+  font-size: 26rpx;
+  font-weight: 600;
+}
+
+.checkbox-wrap {
+  display: flex;
+  align-items: center;
+  flex-shrink: 0;
+}

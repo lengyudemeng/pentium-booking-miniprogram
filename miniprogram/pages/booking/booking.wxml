@@ -1,0 +1,196 @@
+<view class="page">
+  <view wx:if="{{consentPopupVisible}}" class="consent-mask">
+    <view class="consent-dialog">
+      <view class="consent-title">{{consentStep === 'privacy' ? '首次预约请先阅读隐私政策' : '请继续阅读用户协议'}}</view>
+      <view class="consent-subtitle">首次预约前需完整阅读相关协议，并在阅读完成后点击确认，方可继续预约。</view>
+
+      <scroll-view
+        wx:if="{{consentStep === 'privacy'}}"
+        scroll-y
+        class="consent-scroll"
+        bindscrolltolower="onPrivacyScrollToLower"
+      >
+        <block wx:for="{{legal.privacySections}}" wx:key="title">
+          <view class="consent-section">
+            <view class="consent-section-title">{{item.title}}</view>
+            <block wx:for="{{item.lines}}" wx:key="*this">
+              <view class="consent-line">{{item}}</view>
+            </block>
+          </view>
+        </block>
+      </scroll-view>
+
+      <scroll-view
+        wx:elif="{{consentStep === 'agreement'}}"
+        scroll-y
+        class="consent-scroll"
+        bindscrolltolower="onAgreementScrollToLower"
+      >
+        <block wx:for="{{legal.agreementSections}}" wx:key="title">
+          <view class="consent-section">
+            <view class="consent-section-title">{{item.title}}</view>
+            <block wx:for="{{item.lines}}" wx:key="*this">
+              <view class="consent-line">{{item}}</view>
+            </block>
+          </view>
+        </block>
+      </scroll-view>
+
+      <view class="consent-tip" wx:if="{{consentStep === 'privacy' && !consentReadState.privacy}}">
+        请先滚动到末尾，再进入下一步。
+      </view>
+      <view class="consent-tip" wx:if="{{consentStep === 'agreement' && !consentReadState.agreement}}">
+        请先滚动到末尾，再点击确认。
+      </view>
+
+      <view class="consent-link-row">
+        <text class="agreement-link" bindtap="openPrivacyPolicy">查看完整《隐私政策》</text>
+        <text class="agreement-link" bindtap="openUserAgreement">查看完整《用户协议》</text>
+      </view>
+
+      <view class="consent-actions">
+        <button class="ghost-btn consent-btn" bindtap="closeFirstBookingConsentPopup">稍后再说</button>
+        <button
+          wx:if="{{consentStep === 'privacy'}}"
+          class="primary-btn consent-btn"
+          disabled="{{!consentReadState.privacy}}"
+          bindtap="goToAgreementStep"
+        >
+          已阅读，下一步
+        </button>
+        <button
+          wx:else
+          class="primary-btn consent-btn"
+          disabled="{{!consentReadState.agreement}}"
+          bindtap="confirmFirstBookingConsent"
+        >
+          确认并继续预约
+        </button>
+      </view>
+
+      <button wx:if="{{consentStep === 'agreement'}}" class="text-btn" bindtap="backToPrivacyStep">返回上一份协议</button>
+    </view>
+  </view>
+
+  <view class="card">
+    <view class="section-title">提交预约</view>
+    <view class="section-subtitle">请先选择预约日期，再选择时段并填写预约信息。每个时段最多支持 10 人预约。</view>
+  </view>
+
+  <view class="card notice-card">
+    <view class="section-title">隐私与协议告知</view>
+    <view class="notice-text">提交预约前，我们会收集你的姓名、手机号和预约需求，仅用于预约登记、服务联系与售后追踪。</view>
+    <view class="notice-text">请在微信公众平台后台同步配置《用户隐私保护指引》，并填写真实保存期限、删除方式和联系方式。</view>
+    <view class="link-row">
+      <text class="link-text" bindtap="openPrivacyPolicy">查看《隐私政策》</text>
+      <text class="link-text" bindtap="openUserAgreement">查看《用户协议》</text>
+    </view>
+  </view>
+
+  <view class="card">
+    <view class="section-title">1. 选择预约日期</view>
+    <view class="list-gap">
+      <block wx:for="{{dateOptions}}" wx:key="serviceDate">
+        <view
+          class="date-card {{selectedDate === item.serviceDate ? 'date-card-active' : ''}} {{!item.isDutyOpen ? 'date-card-disabled' : ''}}"
+          bindtap="chooseDate"
+          data-date="{{item.serviceDate}}"
+          data-open="{{item.isDutyOpen}}"
+        >
+          <view>
+            <view class="date-title">{{item.serviceDateLabel}}</view>
+            <view class="date-desc">{{item.description}}</view>
+          </view>
+          <view class="date-arrow {{!item.isDutyOpen ? 'date-arrow-disabled' : (item.hasMyAppointment ? 'date-arrow-booked' : '')}}">
+            {{!item.isDutyOpen ? '已关闭' : (item.hasMyAppointment ? '已预约' : (selectedDate === item.serviceDate ? '已选中' : '选择'))}}
+          </view>
+        </view>
+      </block>
+    </view>
+  </view>
+
+  <view class="card">
+    <view class="section-title">2. 选择预约时段</view>
+    <view class="section-subtitle">当前日期：{{selectedDateLabel}}</view>
+    <view class="list-gap top-gap">
+      <block wx:for="{{slots}}" wx:key="id">
+        <view
+          class="time-card {{form.slotId === item.id ? 'time-card-active' : ''}} {{item.status !== 'available' ? 'time-card-disabled' : ''}}"
+          bindtap="chooseSlot"
+          data-slot-id="{{item.id}}"
+          data-status="{{item.status}}"
+        >
+          <view>
+            <view class="time-title">{{item.label}}</view>
+            <view class="time-desc">{{item.detailText}}</view>
+          </view>
+          <view class="tag tag-{{item.status}}">{{item.statusText}}</view>
+        </view>
+      </block>
+    </view>
+  </view>
+
+  <view class="card">
+    <view class="section-title">3. 填写预约信息</view>
+    <view class="field">
+      <text class="field-label">预约类型</text>
+      <picker mode="selector" range="{{appointmentTypes}}" bindchange="chooseAppointmentType">
+        <view class="picker-field">
+          <text wx:if="{{form.appointmentType}}">{{form.appointmentType}}</text>
+          <text wx:else>请选择预约类型</text>
+        </view>
+      </picker>
+    </view>
+    <view class="field">
+      <text class="field-label">姓名</text>
+      <input class="field-input" placeholder="请输入姓名" value="{{form.name}}" bindinput="updateName" />
+    </view>
+    <view class="field">
+      <text class="field-label">手机号</text>
+      <input class="field-input" type="number" maxlength="11" placeholder="请输入手机号" value="{{form.phone}}" bindinput="updatePhone" />
+    </view>
+    <view class="field">
+      <text class="field-label">预约需求</text>
+      <textarea class="field-textarea" placeholder="请简要描述你的预约需求，例如设备型号、故障情况、希望处理内容等" value="{{form.request}}" bindinput="updateRequest"></textarea>
+    </view>
+
+    <view class="agreement-box">
+      <view class="agreement-item" bindtap="togglePrivacyConsent">
+        <checkbox checked="{{agreements.privacyConsent}}" color="#2563eb" />
+        <text class="agreement-text">我已阅读并同意</text>
+        <text class="agreement-link" catchtap="openPrivacyPolicy">《隐私政策》</text>
+      </view>
+      <view class="agreement-item" bindtap="toggleAgreementConsent">
+        <checkbox checked="{{agreements.agreementConsent}}" color="#2563eb" />
+        <text class="agreement-text">我已阅读并同意</text>
+        <text class="agreement-link" catchtap="openUserAgreement">《用户协议》</text>
+      </view>
+    </view>
+
+    <button class="primary-btn" loading="{{submitting}}" bindtap="submitBooking">确认预约</button>
+  </view>
+
+  <view class="card">
+    <view class="section-title">我的预约记录</view>
+    <view wx:if="{{myAppointments.length === 0}}" class="empty-text">暂无预约记录</view>
+    <view wx:else class="list-gap">
+      <block wx:for="{{myAppointments}}" wx:key="id">
+        <view class="record-item">
+          <view class="record-top">
+            <view class="record-title">{{item.serviceDateLabel}} {{item.slotLabel}}</view>
+            <view class="tag tag-{{item.status === 'completed' ? 'completed' : (item.status === 'cancelled' ? 'closed' : 'booked')}}">{{item.statusText}}</view>
+          </view>
+          <view class="record-desc">类型：{{item.appointmentType || '未填写'}}</view>
+          <view class="record-desc">值班组别：{{item.groupName || '未排班'}}</view>
+          <view class="record-desc">姓名：{{item.name}}</view>
+          <view class="record-desc">手机号：{{item.phoneMasked}}</view>
+          <view class="record-desc">需求：{{item.request}}</view>
+          <view wx:if="{{item.closedBy}}" class="record-desc">结单人：{{item.closedBy}}</view>
+          <view wx:if="{{item.canCancel}}" class="action-area">
+            <button class="ghost-btn" loading="{{cancelingId === item.id}}" bindtap="cancelAppointment" data-id="{{item.id}}">取消预约</button>
+          </view>
+        </view>
+      </block>
+    </view>
+  </view>
+</view>

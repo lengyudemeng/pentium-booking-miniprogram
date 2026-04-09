@@ -1,0 +1,39 @@
+{
+  "pages": [
+    "miniprogram/pages/index/index",
+    "miniprogram/pages/booking/booking",
+    "miniprogram/pages/user/user",
+    "miniprogram/pages/admin/admin",
+    "miniprogram/pages/privacy/privacy",
+    "miniprogram/pages/agreement/agreement"
+  ],
+  "window": {
+    "navigationBarTitleText": "每周六预约",
+    "navigationBarBackgroundColor": "#2563eb",
+    "navigationBarTextStyle": "white",
+    "backgroundColor": "#f4f7fb",
+    "backgroundTextStyle": "light"
+  },
+  "style": "v2",
+  "sitemapLocation": "sitemap.json",
+  "tabBar": {
+    "color": "#6b7280",
+    "selectedColor": "#2563eb",
+    "backgroundColor": "#ffffff",
+    "borderStyle": "black",
+    "list": [
+      {
+        "pagePath": "miniprogram/pages/index/index",
+        "text": "首页"
+      },
+      {
+        "pagePath": "miniprogram/pages/booking/booking",
+        "text": "预约"
+      },
+      {
+        "pagePath": "miniprogram/pages/user/user",
+        "text": "我的"
+      }
+    ]
+  }
+}

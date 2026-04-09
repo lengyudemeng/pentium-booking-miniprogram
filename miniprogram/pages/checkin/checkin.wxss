@@ -1,0 +1,33 @@
+.info-title {
+  font-size: 34rpx;
+  font-weight: 700;
+}
+
+.record-desc {
+  margin-top: 10rpx;
+  color: #6b7280;
+  line-height: 1.7;
+}
+
+.result-box {
+  margin-top: 24rpx;
+  border-radius: 20rpx;
+  padding: 24rpx;
+}
+
+.result-title {
+  font-size: 30rpx;
+  font-weight: 700;
+}
+
+.result-primary {
+  background: #eff6ff;
+}
+
+.result-success {
+  background: #ecfdf5;
+}
+
+.result-muted {
+  background: #f3f4f6;
+}

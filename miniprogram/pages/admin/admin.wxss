@@ -1,0 +1,91 @@
+.admin-card {
+  background: #f8fafc;
+  border-radius: 20rpx;
+  padding: 24rpx;
+}
+
+.nav-card {
+  background: #f8fafc;
+  border-radius: 20rpx;
+  padding: 24rpx;
+}
+
+.nav-card-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 20rpx;
+}
+
+.nav-card-title {
+  font-size: 30rpx;
+  font-weight: 700;
+}
+
+.nav-card-desc,
+.nav-card-meta {
+  margin-top: 8rpx;
+  color: #6b7280;
+  line-height: 1.7;
+}
+
+.nav-card-arrow {
+  color: #2563eb;
+  font-size: 32rpx;
+  font-weight: 700;
+  line-height: 1;
+}
+
+.group-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12rpx;
+  margin-top: 20rpx;
+}
+
+.mini-btn {
+  margin: 0;
+  padding-left: 24rpx;
+  padding-right: 24rpx;
+  font-size: 24rpx;
+}
+
+.top-gap {
+  margin-top: 20rpx;
+}
+
+.picker-field {
+  width: 100%;
+  background: #f9fafb;
+  border: 2rpx solid #e5e7eb;
+  border-radius: 18rpx;
+  padding: 26rpx 28rpx;
+  box-sizing: border-box;
+  font-size: 28rpx;
+  color: #111827;
+  min-height: 96rpx;
+}
+
+.schedule-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16rpx;
+}
+
+.schedule-title {
+  font-size: 30rpx;
+  font-weight: 700;
+}
+
+.schedule-desc,
+.schedule-summary,
+.record-desc {
+  margin-top: 8rpx;
+  color: #6b7280;
+  line-height: 1.7;
+}
+
+.record-title {
+  font-weight: 700;
+}

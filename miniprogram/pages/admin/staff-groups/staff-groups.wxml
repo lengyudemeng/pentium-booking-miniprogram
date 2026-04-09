@@ -1,0 +1,82 @@
+<view class="page">
+  <view class="card">
+    <view class="section-title">部员分组管理</view>
+    <view class="section-subtitle">调整已审批部员的分组，支持批量绑定分组，也可直接取消绑定。</view>
+  </view>
+
+  <view class="card">
+    <view wx:if="{{loading}}" class="empty-text">加载中...</view>
+    <view wx:elif="{{staffMembers.length === 0}}" class="empty-text">暂无已审批部员</view>
+    <view wx:else class="list-gap">
+      <view class="batch-card">
+        <view class="batch-head">
+          <view class="record-title">批量绑定分组</view>
+          <button class="ghost-btn mini-btn" bindtap="toggleSelectAll" disabled="{{batchUpdating || !!updatingStaffKey}}">
+            {{selectedOpenIds.length === staffMembers.length ? '取消全选' : '全选'}}
+          </button>
+        </view>
+        <view class="record-desc">已选择 {{selectedOpenIds.length}} / {{staffMembers.length}} 人</view>
+        <view class="group-row top-gap">
+          <block wx:for="{{groupOptions}}" wx:key="id" wx:for-item="group">
+            <button
+              class="primary-btn mini-btn"
+              bindtap="batchUpdateStaffGroup"
+              data-group-id="{{group.id}}"
+              loading="{{batchUpdating}}"
+              disabled="{{selectedOpenIds.length === 0 || !!updatingStaffKey || batchUpdating}}"
+            >
+              批量设为{{group.name}}
+            </button>
+          </block>
+        </view>
+      </view>
+
+      <checkbox-group bindchange="handleSelectionChange">
+        <block wx:for="{{staffMembers}}" wx:key="openId">
+          <view class="admin-card {{item.selected ? 'selected-card' : ''}}">
+            <view>
+              <view class="record-title">{{item.staffName}}</view>
+              <view class="record-desc">OpenID：{{item.openId}}</view>
+              <view class="record-desc">当前分组：{{item.groupName || '未分配'}}</view>
+            </view>
+            <label class="select-row">
+              <view class="select-text">批量分组选择</view>
+              <view class="checkbox-wrap">
+                <checkbox
+                  value="{{item.openId}}"
+                  checked="{{item.selected}}"
+                  color="#2563eb"
+                  disabled="{{batchUpdating || !!updatingStaffKey}}"
+                />
+              </view>
+            </label>
+            <view class="group-row">
+              <block wx:for="{{groupOptions}}" wx:key="id" wx:for-item="group">
+                <button
+                  class="{{item.groupId === group.id ? 'primary-btn' : 'ghost-btn'}} mini-btn"
+                  bindtap="updateStaffGroup"
+                  data-openid="{{item.openId}}"
+                  data-group-id="{{group.id}}"
+                  loading="{{updatingStaffKey === (item.openId + '-' + group.id)}}"
+                  disabled="{{batchUpdating}}"
+                >
+                  {{group.name}}
+                </button>
+              </block>
+            </view>
+            <button
+              class="danger-btn mini-btn top-gap"
+              bindtap="removeStaffBinding"
+              data-openid="{{item.openId}}"
+              data-staff-name="{{item.staffName}}"
+              loading="{{updatingStaffKey === (item.openId + '-remove')}}"
+              disabled="{{batchUpdating}}"
+            >
+              取消部员绑定
+            </button>
+          </view>
+        </block>
+      </checkbox-group>
+    </view>
+  </view>
+</view>

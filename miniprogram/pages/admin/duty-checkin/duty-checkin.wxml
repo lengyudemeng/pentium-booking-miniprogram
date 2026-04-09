@@ -1,0 +1,93 @@
+<view class="page">
+  <view class="card">
+    <view class="section-title">值班签到</view>
+    <view class="section-subtitle">请选择值班日期，展示对应签到二维码，并查看该值班组成员的已签到/未签到情况。</view>
+  </view>
+
+  <view class="card">
+    <view class="section-title">值班日期</view>
+    <view wx:if="{{loading && dutyDates.length === 0}}" class="empty-text">加载中...</view>
+    <view wx:elif="{{dutyDates.length === 0}}" class="empty-text">暂无可签到的值班日期</view>
+    <scroll-view wx:else class="date-tabs" scroll-x enable-flex>
+      <block wx:for="{{dutyDates}}" wx:key="serviceDate">
+        <view class="date-tab {{selectedDate === item.serviceDate ? 'date-tab-active' : ''}}" bindtap="selectDutyDate" data-service-date="{{item.serviceDate}}">
+          <view class="date-tab-title">{{item.serviceDateLabel}}</view>
+          <view class="date-tab-desc">{{item.groupName}}</view>
+          <view class="date-tab-meta">{{item.signStatusText}}</view>
+        </view>
+      </block>
+    </scroll-view>
+  </view>
+
+  <view wx:if="{{selectedDutyDate}}" class="card">
+    <view class="section-title">签到二维码</view>
+    <view class="section-subtitle">{{selectedDutyDate.serviceDateLabel}} · 第{{selectedDutyDate.weekNo}}周 · {{selectedDutyDate.groupName}}</view>
+    <image wx:if="{{selectedDutyDate.qrCodeFileID}}" class="qr-image" src="{{selectedDutyDate.qrCodeFileID}}" mode="aspectFit" show-menu-by-longpress />
+    <view class="record-desc center-text">请值班成员使用微信扫描二维码进入签到页面完成签到。</view>
+    <button class="ghost-btn top-gap" bindtap="exportReport" loading="{{exporting}}">导出本周签到Excel</button>
+  </view>
+
+  <view wx:if="{{selectedDutyDate}}" class="card">
+    <view class="section-title">签到情况</view>
+    <view class="summary-row">
+      <view class="summary-pill summary-pill-green">已签到 {{signedMembers.length}} 人</view>
+      <view class="summary-pill summary-pill-gray">未签到 {{unsignedMembers.length}} 人</view>
+    </view>
+
+    <view class="list-gap top-gap">
+      <view class="status-card">
+        <view class="record-title">已签到成员</view>
+        <view wx:if="{{signedMembers.length === 0}}" class="empty-text">暂无成员签到</view>
+        <view wx:else class="list-gap top-gap">
+          <block wx:for="{{signedMembers}}" wx:key="openId">
+            <view class="member-item signed-item">
+              <view class="member-head">
+                <view>
+                  <view class="record-title">{{item.staffName}}</view>
+                  <view class="record-desc">签到时间：{{item.signedAtLabel}}</view>
+                </view>
+                <button
+                  class="ghost-btn mini-btn"
+                  bindtap="updateMemberStatus"
+                  data-openid="{{item.openId}}"
+                  data-signed="{{false}}"
+                  loading="{{updatingMemberKey === (item.openId + '-unsigned')}}"
+                  disabled="{{exporting}}"
+                >
+                  设为未签到
+                </button>
+              </view>
+            </view>
+          </block>
+        </view>
+      </view>
+
+      <view class="status-card">
+        <view class="record-title">未签到成员</view>
+        <view wx:if="{{unsignedMembers.length === 0}}" class="empty-text">全部成员已签到</view>
+        <view wx:else class="list-gap top-gap">
+          <block wx:for="{{unsignedMembers}}" wx:key="openId">
+            <view class="member-item unsigned-item">
+              <view class="member-head">
+                <view>
+                  <view class="record-title">{{item.staffName}}</view>
+                  <view class="record-desc">当前状态：未签到</view>
+                </view>
+                <button
+                  class="primary-btn mini-btn"
+                  bindtap="updateMemberStatus"
+                  data-openid="{{item.openId}}"
+                  data-signed="{{true}}"
+                  loading="{{updatingMemberKey === (item.openId + '-signed')}}"
+                  disabled="{{exporting}}"
+                >
+                  设为已签到
+                </button>
+              </view>
+            </view>
+          </block>
+        </view>
+      </view>
+    </view>
+  </view>
+</view>

@@ -1,0 +1,34 @@
+<view class="page">
+  <view class="card">
+    <view class="section-title">隐私政策</view>
+    <view class="section-subtitle">{{legal.APP_NAME}} 会在预约服务过程中处理必要的个人信息。</view>
+  </view>
+
+  <view class="card">
+    <view class="section-title">一、收集的信息</view>
+    <view class="policy-line">1. 姓名：用于预约登记和现场核验。</view>
+    <view class="policy-line">2. 手机号：用于联系你确认预约、服务进度或异常处理。</view>
+    <view class="policy-line">3. 预约需求：用于判断故障类型、安排值班人员和服务准备。</view>
+  </view>
+
+  <view class="card">
+    <view class="section-title">二、使用目的</view>
+    <view class="policy-line">我们仅将上述信息用于预约创建、服务履约、服务回访、纠纷处理和必要的安全审计，不会超出合理范围另作他用。</view>
+  </view>
+
+  <view class="card">
+    <view class="section-title">三、保存期限</view>
+    <view class="policy-line">{{legal.DATA_RETENTION}}</view>
+  </view>
+
+  <view class="card">
+    <view class="section-title">四、删除方式</view>
+    <view class="policy-line">{{legal.DELETE_METHOD}}</view>
+  </view>
+
+  <view class="card">
+    <view class="section-title">五、联系方式</view>
+    <view class="policy-line">{{legal.CONTACT_INFO}}</view>
+    <view class="policy-line">提示：上线前请同步在微信公众平台后台完成《用户隐私保护指引》配置，并替换为真实联系方式。</view>
+  </view>
+</view>

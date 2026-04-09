@@ -1,0 +1,55 @@
+<view class="page">
+  <view class="card">
+    <view class="section-title">学期轮值配置与预约开关</view>
+    <view class="section-subtitle">请先配置学期开始日期和值班起始周，系统会自动预览从学期开始往后 20 周的值班安排，并可管理预约开关。</view>
+  </view>
+
+  <view class="card">
+    <view class="field">
+      <text class="field-label">学期开始日期</text>
+      <picker mode="date" value="{{semesterForm.semesterStartDate}}" bindchange="changeSemesterDate">
+        <view class="picker-field">
+          <text wx:if="{{semesterForm.semesterStartDate}}">{{semesterForm.semesterStartDate}}</text>
+          <text wx:else>请选择学期开始日期</text>
+        </view>
+      </picker>
+    </view>
+    <view class="field">
+      <text class="field-label">值班从第几周开始</text>
+      <input class="field-input" type="number" value="{{semesterForm.dutyStartWeek}}" bindinput="updateDutyStartWeek" />
+    </view>
+    <button class="primary-btn" loading="{{savingSemester}}" bindtap="saveSemesterConfig">保存学期配置</button>
+  </view>
+
+  <view class="card">
+    <view class="section-title">值班预览与预约开关</view>
+    <view class="section-subtitle">以下统一展示从学期开始往后 20 周的值班安排，并可直接设置所有尚未开始的值班日期是否开放预约。</view>
+    <view wx:if="{{loading}}" class="empty-text">加载中...</view>
+    <view wx:elif="{{semesterDutyItems.length === 0}}" class="empty-text">暂无值班安排</view>
+    <view wx:else class="list-gap">
+      <block wx:for="{{semesterDutyItems}}" wx:key="serviceDate">
+        <view class="admin-card">
+          <view class="schedule-head">
+            <view>
+              <view class="schedule-title">{{item.weekLabel}}</view>
+              <view class="schedule-desc">{{item.serviceDateLabel}}</view>
+            </view>
+            <view class="schedule-summary">{{item.dutyText}}</view>
+          </view>
+          <view class="record-desc">{{item.description}}</view>
+          <view class="record-desc">预约状态：{{item.summaryText}}</view>
+          <button
+            class="{{item.isManuallyClosed ? 'primary-btn' : 'ghost-btn'}} top-gap"
+            bindtap="toggleDateAvailability"
+            data-service-date="{{item.serviceDate}}"
+            data-closed="{{item.isManuallyClosed}}"
+            loading="{{updatingDateKey === item.serviceDate}}"
+            disabled="{{!item.canManageBooking || updatingDateKey === item.serviceDate}}"
+          >
+            {{item.manageButtonText}}
+          </button>
+        </view>
+      </block>
+    </view>
+  </view>
+</view>

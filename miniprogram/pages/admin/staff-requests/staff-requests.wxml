@@ -1,0 +1,64 @@
+<view class="page">
+  <view class="card">
+    <view class="section-title">部员审批</view>
+    <view class="section-subtitle">请先设置绑定码。用户输入正确绑定码后，才可提交部员绑定申请。</view>
+  </view>
+
+  <view class="card">
+    <view class="section-title">绑定码设置</view>
+    <view class="field">
+      <text class="field-label">当前绑定码</text>
+      <input
+        class="field-input"
+        password="{{!showBindingCodePlain}}"
+        placeholder="请输入管理员设定的绑定码"
+        value="{{bindingCodeForm.staffBindingCode}}"
+        bindinput="updateBindingCode"
+      />
+    </view>
+    <view class="group-row">
+      <button class="ghost-btn mini-btn" bindtap="fillRandomBindingCode">一键随机生成</button>
+      <button class="ghost-btn mini-btn" bindtap="toggleBindingCodePlain">
+        {{showBindingCodePlain ? '隐藏明文' : '显示明文'}}
+      </button>
+    </view>
+    <button class="primary-btn top-gap" bindtap="saveBindingCode" loading="{{savingBindingCode}}">保存绑定码</button>
+  </view>
+
+  <view class="card">
+    <view wx:if="{{loading}}" class="empty-text">加载中...</view>
+    <view wx:elif="{{staffRequests.length === 0}}" class="empty-text">暂无待审批申请</view>
+    <view wx:else class="list-gap">
+      <block wx:for="{{staffRequests}}" wx:key="openId">
+        <view class="admin-card">
+          <view class="record-title">{{item.staffName}}</view>
+          <view class="record-desc">OpenID：{{item.openId}}</view>
+          <view class="record-desc">请点击下方分组按钮直接审批通过，或点击驳回。</view>
+          <view class="group-row">
+            <block wx:for="{{groupOptions}}" wx:key="id" wx:for-item="group">
+              <button
+                class="ghost-btn mini-btn"
+                bindtap="reviewRequest"
+                data-openid="{{item.openId}}"
+                data-action="approve"
+                data-group-id="{{group.id}}"
+                loading="{{reviewingKey === (item.openId + '-approve-' + group.id)}}"
+              >
+                批准到{{group.name}}
+              </button>
+            </block>
+          </view>
+          <button
+            class="danger-btn mini-btn top-gap"
+            bindtap="reviewRequest"
+            data-openid="{{item.openId}}"
+            data-action="reject"
+            loading="{{reviewingKey === (item.openId + '-reject-0')}}"
+          >
+            驳回申请
+          </button>
+        </view>
+      </block>
+    </view>
+  </view>
+</view>

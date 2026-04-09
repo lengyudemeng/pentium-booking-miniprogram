@@ -1,0 +1,32 @@
+<view class="page">
+  <view class="card">
+    <view class="section-title">用户协议</view>
+    <view class="section-subtitle">欢迎使用 {{legal.APP_NAME}}。</view>
+  </view>
+
+  <view class="card">
+    <view class="section-title">一、服务说明</view>
+    <view class="policy-line">1. 本小程序用于提交每周六设备维修/咨询预约。</view>
+    <view class="policy-line">2. 预约成功后，请按约定时间到场；如需取消，请在预约日期前操作。</view>
+    <view class="policy-line">3. 为保障服务秩序，用户应确保提交的信息真实、准确、完整。</view>
+  </view>
+
+  <view class="card">
+    <view class="section-title">二、用户责任</view>
+    <view class="policy-line">1. 不得冒用他人身份提交预约。</view>
+    <view class="policy-line">2. 不得恶意占用预约名额、批量刷单或提交违法违规内容。</view>
+    <view class="policy-line">3. 如预约信息存在明显错误，运营方有权联系用户核实或取消预约。</view>
+  </view>
+
+  <view class="card">
+    <view class="section-title">三、平台说明</view>
+    <view class="policy-line">1. 平台会根据值班安排、容量限制和现场情况处理预约。</view>
+    <view class="policy-line">2. 若遇到临时停服、节假日调整或不可抗力，平台可关闭对应日期预约并另行通知。</view>
+  </view>
+
+  <view class="card">
+    <view class="section-title">四、隐私与联系</view>
+    <view class="policy-line">个人信息处理规则详见《隐私政策》。</view>
+    <view class="policy-line">如有问题，请联系：{{legal.CONTACT_INFO}}</view>
+  </view>
+</view>

@@ -1,0 +1,80 @@
+.profile-line {
+  line-height: 1.9;
+  color: #374151;
+}
+
+.highlight {
+  color: #2563eb;
+  font-weight: 700;
+}
+
+.pending-text {
+  color: #d97706;
+  font-weight: 700;
+}
+
+.danger-text {
+  color: #dc2626;
+  font-weight: 700;
+}
+
+.schedule-card {
+  background: #f8fafc;
+  border-radius: 20rpx;
+  padding: 24rpx;
+}
+
+.schedule-title {
+  font-weight: 700;
+  font-size: 30rpx;
+}
+
+.schedule-desc,
+.schedule-summary {
+  margin-top: 8rpx;
+  color: #6b7280;
+  font-size: 24rpx;
+}
+
+.schedule-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16rpx;
+}
+
+.inner-gap {
+  margin-top: 20rpx;
+}
+
+.record-item {
+  background: #ffffff;
+  border-radius: 20rpx;
+  padding: 24rpx;
+}
+
+.record-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16rpx;
+  margin-bottom: 12rpx;
+}
+
+.record-title {
+  font-weight: 700;
+}
+
+.record-desc {
+  color: #4b5563;
+  line-height: 1.8;
+}
+
+.action-area {
+  margin-top: 20rpx;
+}
+
+.empty-inline {
+  color: #9ca3af;
+  margin-top: 20rpx;
+}
