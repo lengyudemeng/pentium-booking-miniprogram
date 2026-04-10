@@ -42,3 +42,32 @@
   align-items: center;
   flex-shrink: 0;
 }
+
+.search-input-wrap {
+  position: relative;
+}
+
+.search-input {
+  padding-right: 88rpx;
+}
+
+.search-clear-btn {
+  position: absolute;
+  top: 50%;
+  right: 24rpx;
+  transform: translateY(-50%);
+  width: 40rpx;
+  height: 40rpx;
+  border-radius: 999rpx;
+  background: #e5e7eb;
+  color: #6b7280;
+  font-size: 24rpx;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  line-height: 1;
+}
+
+.filter-row {
+  margin-top: 0;
+}

@@ -1,0 +1,66 @@
+@import "../admin.wxss";
+
+.summary-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 16rpx;
+  margin-top: 20rpx;
+}
+
+.summary-pill {
+  padding: 12rpx 22rpx;
+  border-radius: 999rpx;
+  font-size: 24rpx;
+  font-weight: 600;
+}
+
+.summary-pill-blue {
+  background: #dbeafe;
+  color: #1d4ed8;
+}
+
+.summary-pill-orange {
+  background: #fee2e2;
+  color: #b91c1c;
+}
+
+.summary-pill-green {
+  background: #dcfce7;
+  color: #15803d;
+}
+
+.record-item {
+  background: #f8fafc;
+  border-radius: 20rpx;
+  padding: 24rpx;
+}
+
+.record-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16rpx;
+  margin-bottom: 12rpx;
+}
+
+.action-row {
+  display: flex;
+  flex-wrap: nowrap;
+  gap: 16rpx;
+  margin-top: 20rpx;
+}
+
+.action-btn {
+  flex: 1;
+  margin: 0;
+  padding-left: 28rpx;
+  padding-right: 28rpx;
+  font-size: 24rpx;
+  border-radius: 16rpx;
+}
+
+.disabled-action-btn {
+  background: #f3f4f6;
+  color: #9ca3af;
+  border: none;
+}

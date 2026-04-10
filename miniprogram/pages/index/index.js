@@ -29,7 +29,7 @@ Page({
   async loadData() {
     this.setData({ loading: true });
     try {
-      const data = await service.getAppData();
+      const data = await service.getHomeData();
       this.setData({
         loading: false,
         selectedDateLabel: data.selectedDateLabel,
@@ -48,9 +48,21 @@ Page({
     }
   },
 
+  goCreateBooking() {
+    wx.navigateTo({
+      url: '/pages/booking/create/create'
+    });
+  },
+
+  goQueryBooking() {
+    wx.navigateTo({
+      url: '/pages/booking/query/query'
+    });
+  },
+
   goBooking() {
-    wx.switchTab({
-      url: '/pages/booking/booking'
+    wx.navigateTo({
+      url: '/pages/booking/create/create'
     });
   }
 });

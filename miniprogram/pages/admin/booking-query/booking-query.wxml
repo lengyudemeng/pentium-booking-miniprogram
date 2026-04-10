@@ -1,0 +1,93 @@
+<view class="page">
+  <view class="card">
+    <view class="section-title">预约查询</view>
+    <view class="section-subtitle">管理员可按值班日期查询当天预约，展示除已取消外的全部预约记录。</view>
+  </view>
+
+  <view class="card">
+    <view class="field">
+      <text class="field-label">选择值班日期</text>
+      <picker mode="selector" range="{{dutyDateOptions}}" range-key="serviceDateLabel" bindchange="chooseDutyDate">
+        <view class="picker-field">
+          <text wx:if="{{selectedDateLabel}}">{{selectedDateLabel}}</text>
+          <text wx:else>请选择值班日期</text>
+        </view>
+      </picker>
+    </view>
+
+    <view wx:if="{{loading}}" class="empty-text">加载中...</view>
+    <view wx:elif="{{selectedDutyDate}}">
+      <view class="summary-row">
+        <view class="summary-pill summary-pill-blue">共 {{summary.totalCount}} 条</view>
+        <view class="summary-pill summary-pill-orange">待服务 {{summary.bookedCount}} 条</view>
+        <view class="summary-pill summary-pill-green">已结单 {{summary.completedCount}} 条</view>
+      </view>
+      <view class="record-desc top-gap">{{selectedDutyDate.serviceDateLabel}} · 第{{selectedDutyDate.weekNo}}周 · {{selectedDutyDate.groupName}}</view>
+      <view class="record-desc">{{selectedDutyDate.description}}</view>
+    </view>
+    <view wx:else class="empty-text">暂无可查询的值班日期</view>
+  </view>
+
+  <view wx:if="{{selectedDutyDate}}" class="card">
+    <view class="section-title">当天预约</view>
+    <view wx:if="{{loading}}" class="empty-text">加载中...</view>
+    <view wx:elif="{{appointments.length === 0}}" class="empty-text">该值班日期暂无预约</view>
+    <view wx:else class="list-gap top-gap">
+      <block wx:for="{{appointments}}" wx:key="id">
+        <view class="record-item">
+          <view class="record-top">
+            <view class="record-title">{{item.slotLabel}} · {{item.name}}</view>
+            <view class="tag tag-{{item.status === 'completed' ? 'completed' : 'booked'}}">{{item.statusText}}</view>
+          </view>
+          <view class="record-desc">预约类型：{{item.appointmentType || '未填写'}}</view>
+          <view class="record-desc">值班组别：{{item.groupName || '未排班'}}</view>
+          <view class="record-desc">手机号：{{item.phone}}</view>
+          <view class="record-desc">需求：{{item.request || '未填写'}}</view>
+          <view wx:if="{{item.closedBy}}" class="record-desc">结单人：{{item.closedBy}}</view>
+          <view class="action-row">
+            <button
+              wx:if="{{item.status === 'booked'}}"
+              class="ghost-btn action-btn"
+              bindtap="updateAppointmentStatus"
+              data-id="{{item.id}}"
+              data-status="completed"
+              loading="{{actionLoadingKey === (item.id + '-completed')}}"
+              disabled="{{loading || actionLoadingKey !== ''}}"
+            >
+              设为已结单
+            </button>
+            <button
+              wx:if="{{item.status === 'completed'}}"
+              class="ghost-btn action-btn"
+              bindtap="updateAppointmentStatus"
+              data-id="{{item.id}}"
+              data-status="booked"
+              loading="{{actionLoadingKey === (item.id + '-booked')}}"
+              disabled="{{loading || actionLoadingKey !== ''}}"
+            >
+              改为待服务
+            </button>
+            <button
+              wx:if="{{item.status === 'booked'}}"
+              class="danger-btn action-btn"
+              bindtap="updateAppointmentStatus"
+              data-id="{{item.id}}"
+              data-status="cancelled"
+              loading="{{actionLoadingKey === (item.id + '-cancelled')}}"
+              disabled="{{loading || actionLoadingKey !== ''}}"
+            >
+              取消预约
+            </button>
+            <button
+              wx:if="{{item.status === 'completed'}}"
+              class="disabled-action-btn action-btn"
+              disabled="{{true}}"
+            >
+              无法取消
+            </button>
+          </view>
+        </view>
+      </block>
+    </view>
+  </view>
+</view>

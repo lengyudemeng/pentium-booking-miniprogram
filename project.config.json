@@ -22,7 +22,15 @@
       "disablePlugins": [],
       "outputPath": ""
     },
-    "useCompilerPlugins": false
+    "useCompilerPlugins": false,
+    "compileWorklet": false,
+    "uploadWithSourceMap": true,
+    "minifyWXSS": true,
+    "localPlugins": false,
+    "disableUseStrict": false,
+    "condition": false,
+    "swc": false,
+    "disableSWC": true
   },
   "simulatorType": "wechat",
   "simulatorPluginLibVersion": {},
@@ -31,5 +39,6 @@
     "include": []
   },
   "condition": {},
-  "editorSetting": {}
+  "editorSetting": {},
+  "libVersion": "3.15.1"
 }

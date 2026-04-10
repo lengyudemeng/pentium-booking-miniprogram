@@ -33,7 +33,7 @@ Page({
   async loadData() {
     this.setData({ loading: true });
     try {
-      const data = await service.getAdminData();
+      const data = await service.getStaffRequestAdminData();
       this.setData({
         loading: false,
         groupOptions: data.groupOptions,

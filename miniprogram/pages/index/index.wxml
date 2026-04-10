@@ -3,7 +3,10 @@
     <view class="hero-text">
       <view class="hero-title">奔腾特勤队预约服务</view>
       <view class="hero-subtitle">每周六晚 19:00-21:00 提供值班支持，地点请以实际通知为准。</view>
-      <button class="primary-btn hero-btn" bindtap="goBooking">立即预约</button>
+      <view class="hero-btn-row">
+        <button class="primary-btn hero-btn hero-btn-half" bindtap="goCreateBooking">立即预约</button>
+        <button class="ghost-btn hero-btn hero-btn-half" bindtap="goQueryBooking">查询预约</button>
+      </view>
     </view>
     <image class="hero-image" src="/assets/banner.png" mode="aspectFill" />
   </view>

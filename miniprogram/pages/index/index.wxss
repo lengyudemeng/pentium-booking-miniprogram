@@ -19,8 +19,20 @@
   line-height: 1.6;
 }
 
+.hero-btn-row {
+  display: flex;
+  gap: 16rpx;
+  margin-top: 24rpx;
+}
+
 .hero-btn {
   margin-top: 24rpx;
+}
+
+.hero-btn-half {
+  flex: 1;
+  margin-top: 0;
+  border-radius: 20rpx;
 }
 
 .hero-image {

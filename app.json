@@ -2,6 +2,8 @@
   "pages": [
     "miniprogram/pages/index/index",
     "miniprogram/pages/booking/booking",
+    "miniprogram/pages/booking/create/create",
+    "miniprogram/pages/booking/query/query",
     "miniprogram/pages/user/user",
     "miniprogram/pages/admin/admin",
     "miniprogram/pages/privacy/privacy",

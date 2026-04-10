@@ -30,6 +30,33 @@ module.exports = {
   getAppData(payload) {
     return callService('getAppData', payload);
   },
+  getHomeData(payload) {
+    return callService('getHomeData', payload);
+  },
+  getBookingData(payload) {
+    return callService('getBookingData', payload);
+  },
+  getBookingQueryData(payload) {
+    return callService('getBookingQueryData', payload);
+  },
+  getUserData(payload) {
+    return callService('getUserData', payload);
+  },
+  getUserDutySchedules(payload) {
+    return callService('getUserDutySchedules', payload);
+  },
+  getAdminDashboardData(payload) {
+    return callService('getAdminDashboardData', payload);
+  },
+  getStaffRequestAdminData(payload) {
+    return callService('getStaffRequestAdminData', payload);
+  },
+  getStaffGroupAdminData(payload) {
+    return callService('getStaffGroupAdminData', payload);
+  },
+  getAdminBookingQueryData(payload) {
+    return callService('getAdminBookingQueryData', payload);
+  },
   getAdminData(payload) {
     return callService('getAdminData', payload);
   },
@@ -38,6 +65,9 @@ module.exports = {
   },
   cancelAppointment(payload) {
     return callService('cancelAppointment', payload);
+  },
+  adminUpdateAppointmentStatus(payload) {
+    return callService('adminUpdateAppointmentStatus', payload);
   },
   submitStaffRequest(payload) {
     return callService('submitStaffRequest', payload);
@@ -68,6 +98,12 @@ module.exports = {
   },
   getDutyCheckInAdminData(payload) {
     return callService('getDutyCheckInAdminData', payload);
+  },
+  getDutyCheckInDetail(payload) {
+    return callService('getDutyCheckInDetail', payload);
+  },
+  getDutyCheckInQrCode(payload) {
+    return callService('getDutyCheckInQrCode', payload);
   },
   getDutyCheckInPageData(payload) {
     return callService('getDutyCheckInPageData', payload);

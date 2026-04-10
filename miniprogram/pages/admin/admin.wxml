@@ -30,6 +30,17 @@
         <view class="nav-card-meta">当前已审批：{{staffMemberCount}} 人</view>
       </view>
 
+      <view class="nav-card" bindtap="goBookingQuery">
+        <view class="nav-card-head">
+          <view>
+            <view class="nav-card-title">预约查询</view>
+            <view class="nav-card-desc">按值班日期查看当天预约记录</view>
+          </view>
+          <view class="nav-card-arrow">></view>
+        </view>
+        <view class="nav-card-meta">可查看值班当天除已取消外的所有预约</view>
+      </view>
+
       <view class="nav-card" bindtap="goSemesterConfig">
         <view class="nav-card-head">
           <view>
@@ -47,7 +58,7 @@
             <view class="nav-card-title">值班签到</view>
             <view class="nav-card-desc">查看值班签到二维码以及签到情况</view>
           </view>
-          <view class="nav-card-arrow"></view>
+          <view class="nav-card-arrow">></view>
         </view>
         <view class="nav-card-meta">支持扫码签到，并按值班日期查看签到成员</view>
       </view>

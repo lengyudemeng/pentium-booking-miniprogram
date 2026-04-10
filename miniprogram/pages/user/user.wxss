@@ -78,3 +78,7 @@
   color: #9ca3af;
   margin-top: 20rpx;
 }
+
+.admin-entry-btn {
+  border-radius: 16rpx;
+}

@@ -50,6 +50,9 @@
           </button>
         </view>
       </block>
+      <button wx:if="{{hasMoreDutyItems}}" class="ghost-btn" bindtap="loadMoreDutyItems">
+        加载更多（已显示 {{renderedDutyItemCount}} 条）
+      </button>
     </view>
   </view>
 </view>

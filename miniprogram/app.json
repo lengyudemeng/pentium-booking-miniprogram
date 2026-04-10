@@ -2,10 +2,13 @@
   "pages": [
     "pages/index/index",
     "pages/booking/booking",
+    "pages/booking/create/create",
+    "pages/booking/query/query",
     "pages/user/user",
     "pages/admin/admin",
     "pages/admin/staff-requests/staff-requests",
     "pages/admin/staff-groups/staff-groups",
+    "pages/admin/booking-query/booking-query",
     "pages/admin/semester-config/semester-config",
     "pages/admin/duty-checkin/duty-checkin",
     "pages/checkin/checkin",

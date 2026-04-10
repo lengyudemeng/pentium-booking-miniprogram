@@ -15,7 +15,7 @@
   <view class="card" wx:if="{{permissions.isAdmin}}">
     <view class="section-title">管理员入口</view>
     <view class="section-subtitle">管理员权限已改为 OpenID 白名单控制，普通用户不会看到后台入口。</view>
-    <button class="primary-btn" bindtap="goAdmin">进入管理员后台</button>
+    <button class="primary-btn admin-entry-btn" bindtap="goAdmin">进入管理员后台</button>
   </view>
 
   <view class="card" wx:if="{{!staffProfile.isStaff}}">
@@ -40,6 +40,7 @@
   <view class="card" wx:if="{{staffProfile.isStaff}}">
     <view class="section-title">我的值班预约</view>
     <view wx:if="{{!staffProfile.groupId}}" class="empty-text">管理员尚未为你分配分组</view>
+    <view wx:elif="{{schedulesLoading}}" class="empty-text">值班预约加载中...</view>
     <view wx:elif="{{groupSchedules.length === 0}}" class="empty-text">当前没有匹配到你的值班日期</view>
     <view wx:else class="list-gap">
       <block wx:for="{{groupSchedules}}" wx:key="serviceDate" wx:for-item="schedule">
@@ -70,26 +71,6 @@
               </view>
             </block>
           </view>
-        </view>
-      </block>
-    </view>
-  </view>
-
-  <view class="card">
-    <view class="section-title">我的预约历史</view>
-    <view wx:if="{{myAppointments.length === 0}}" class="empty-text">暂无预约历史</view>
-    <view wx:else class="list-gap">
-      <block wx:for="{{myAppointments}}" wx:key="id" wx:for-item="appointment">
-        <view class="record-item">
-          <view class="record-top">
-            <view class="record-title">{{appointment.serviceDateLabel}} {{appointment.slotLabel}}</view>
-            <view class="tag tag-{{appointment.status === 'completed' ? 'completed' : (appointment.status === 'cancelled' ? 'closed' : 'booked')}}">{{appointment.statusText}}</view>
-          </view>
-          <view class="record-desc">类型：{{appointment.appointmentType || '未填写'}}</view>
-          <view class="record-desc">姓名：{{appointment.name}}</view>
-          <view class="record-desc">手机号：{{appointment.phoneMasked}}</view>
-          <view class="record-desc">需求：{{appointment.request}}</view>
-          <view class="record-desc">值班组别：{{appointment.groupName || '未排班'}}</view>
         </view>
       </block>
     </view>

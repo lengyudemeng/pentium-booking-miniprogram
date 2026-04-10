@@ -32,7 +32,7 @@ page {
 .primary-btn {
   background: #2563eb;
   color: #ffffff;
-  border-radius: 999rpx;
+  border-radius: 16rpx;
   font-size: 30rpx;
   font-weight: 600;
 }
@@ -40,7 +40,7 @@ page {
 .ghost-btn {
   background: #eff6ff;
   color: #2563eb;
-  border-radius: 999rpx;
+  border-radius: 16rpx;
   font-size: 28rpx;
   font-weight: 600;
 }
@@ -48,7 +48,7 @@ page {
 .danger-btn {
   background: #ef4444;
   color: #ffffff;
-  border-radius: 999rpx;
+  border-radius: 16rpx;
   font-size: 28rpx;
   font-weight: 600;
 }

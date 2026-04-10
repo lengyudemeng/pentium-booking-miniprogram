@@ -1,6 +1,6 @@
 {
   "libVersion": "3.15.1",
-  "projectname": "pentium_appointment",
+  "projectname": "pentium-booking-miniprogram",
   "setting": {
     "urlCheck": true,
     "coverView": true,
@@ -17,5 +17,6 @@
     "checkInvalidKey": true,
     "ignoreDevUnusedFiles": true,
     "bigPackageSizeSupport": false
-  }
+  },
+  "condition": {}
 }

@@ -22,11 +22,11 @@ Page({
   async loadData() {
     this.setData({ loading: true });
     try {
-      const data = await service.getAdminData();
+      const data = await service.getAdminDashboardData();
       this.setData({
         loading: false,
-        staffRequestCount: data.staffRequests.length,
-        staffMemberCount: data.staffMembers.length,
+        staffRequestCount: data.staffRequestCount || 0,
+        staffMemberCount: data.staffMemberCount || 0,
         semesterConfig: {
           semesterStartDate: data.semesterConfig.semesterStartDate,
           dutyStartWeek: data.semesterConfig.dutyStartWeek
@@ -52,6 +52,12 @@ Page({
   goStaffGroups() {
     wx.navigateTo({
       url: '/pages/admin/staff-groups/staff-groups'
+    });
+  },
+
+  goBookingQuery() {
+    wx.navigateTo({
+      url: '/pages/admin/booking-query/booking-query'
     });
   },
 

@@ -3,6 +3,7 @@ const service = require('../../utils/service');
 Page({
   data: {
     loading: true,
+    schedulesLoading: false,
     requesting: false,
     staffProfile: {
       isStaff: false,
@@ -17,7 +18,6 @@ Page({
       isAdmin: false
     },
     groupSchedules: [],
-    myAppointments: [],
     staffBindingCodeEnabled: false,
     requestForm: {
       staffName: '',
@@ -34,23 +34,43 @@ Page({
   },
 
   async loadData() {
-    this.setData({ loading: true });
+    this.setData({ loading: true, schedulesLoading: false });
     try {
-      const data = await service.getAppData();
+      const data = await service.getUserData();
       this.setData({
         loading: false,
         staffProfile: data.staffProfile,
         permissions: data.permissions || { isAdmin: false },
-        groupSchedules: data.groupSchedules,
-        myAppointments: data.myAppointments,
+        groupSchedules: [],
         staffBindingCodeEnabled: Boolean(data.staffBindingCodeEnabled),
         'requestForm.staffName': data.staffProfile.staffName || ''
       });
+
+      if (data.staffProfile && data.staffProfile.isStaff && data.staffProfile.groupId) {
+        this.loadDutySchedules();
+      }
     } catch (error) {
       this.setData({ loading: false });
       wx.showToast({ title: error.message || '加载失败', icon: 'none' });
     } finally {
       wx.stopPullDownRefresh();
+    }
+  },
+
+  async loadDutySchedules() {
+    if (this.data.schedulesLoading) {
+      return;
+    }
+    this.setData({ schedulesLoading: true });
+    try {
+      const data = await service.getUserDutySchedules();
+      this.setData({
+        groupSchedules: data.groupSchedules || []
+      });
+    } catch (error) {
+      wx.showToast({ title: error.message || '值班预约加载失败', icon: 'none' });
+    } finally {
+      this.setData({ schedulesLoading: false });
     }
   },
 

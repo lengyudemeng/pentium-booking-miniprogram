@@ -22,7 +22,11 @@
   <view wx:if="{{selectedDutyDate}}" class="card">
     <view class="section-title">签到二维码</view>
     <view class="section-subtitle">{{selectedDutyDate.serviceDateLabel}} · 第{{selectedDutyDate.weekNo}}周 · {{selectedDutyDate.groupName}}</view>
-    <image wx:if="{{selectedDutyDate.qrCodeFileID}}" class="qr-image" src="{{selectedDutyDate.qrCodeFileID}}" mode="aspectFit" show-menu-by-longpress />
+    <view wx:if="{{detailLoading}}" class="empty-text">值班详情加载中...</view>
+    <image wx:elif="{{selectedDutyDate.qrCodeFileID}}" class="qr-image" src="{{selectedDutyDate.qrCodeFileID}}" mode="aspectFit" show-menu-by-longpress />
+    <view wx:elif="{{selectedDutyDate.canGenerateQrCode && qrLoading}}" class="empty-text">二维码生成中...</view>
+    <view wx:elif="{{selectedDutyDate.canGenerateQrCode}}" class="empty-text">二维码暂未生成</view>
+    <view wx:else class="empty-text">仅本周且尚未结束的值班日期显示签到二维码</view>
     <view class="record-desc center-text">请值班成员使用微信扫描二维码进入签到页面完成签到。</view>
     <button class="ghost-btn top-gap" bindtap="exportReport" loading="{{exporting}}">导出本周签到Excel</button>
   </view>
@@ -59,6 +63,9 @@
               </view>
             </view>
           </block>
+          <button wx:if="{{signedHasMore}}" class="ghost-btn mini-btn" bindtap="loadMoreSignedMembers">
+            加载更多已签到成员（已显示 {{signedRenderedCount}} 人）
+          </button>
         </view>
       </view>
 
@@ -86,6 +93,9 @@
               </view>
             </view>
           </block>
+          <button wx:if="{{unsignedHasMore}}" class="ghost-btn mini-btn" bindtap="loadMoreUnsignedMembers">
+            加载更多未签到成员（已显示 {{unsignedRenderedCount}} 人）
+          </button>
         </view>
       </view>
     </view>

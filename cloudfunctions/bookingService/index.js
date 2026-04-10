@@ -158,6 +158,19 @@ function isDutyCheckInOpen(serviceDate, now = getChinaNow()) {
   return now >= getChinaDateStart(serviceDateObj) && now <= getServiceDateEnd(serviceDateObj);
 }
 
+function isCurrentWeekServiceDate(serviceDate, now = getChinaNow()) {
+  const serviceDateObj = typeof serviceDate === 'string' ? parseDateString(serviceDate) : serviceDate;
+  const currentWeekMonday = getCurrentWeekMonday(now);
+  const nextWeekMonday = addDays(currentWeekMonday, 7);
+  const serviceDateStart = getChinaDateStart(serviceDateObj).getTime();
+  return serviceDateStart >= currentWeekMonday.getTime() && serviceDateStart < nextWeekMonday.getTime();
+}
+
+function canGenerateDutyCheckInQrCode(serviceDate, now = getChinaNow()) {
+  const serviceDateObj = typeof serviceDate === 'string' ? parseDateString(serviceDate) : serviceDate;
+  return isCurrentWeekServiceDate(serviceDateObj, now) && now <= getServiceDateEnd(serviceDateObj);
+}
+
 function maskPhone(phone = '') {
   if (String(phone).length !== 11) {
     return phone;
@@ -187,6 +200,22 @@ function normalizeAdminOpenIds(value = []) {
   return Array.from(new Set(value.map((item) => String(item || '').trim()).filter(Boolean)));
 }
 
+function getSettingsRuntimeCache(settings) {
+  if (!settings.__runtimeCache) {
+    Object.defineProperty(settings, '__runtimeCache', {
+      value: {
+        weekNoByDate: new Map(),
+        closedDutyCountByDate: new Map(),
+        scheduleInfoByDate: new Map(),
+        closedDutyTimeline: null
+      },
+      enumerable: false,
+      configurable: true
+    });
+  }
+  return settings.__runtimeCache;
+}
+
 function normalizeSettings(data = {}) {
   return {
     semesterStartDate: data.semesterStartDate || formatDate(getCurrentWeekMonday()),
@@ -212,14 +241,77 @@ function isDateManuallyClosed(settings, serviceDate) {
   return (settings.closedDates || []).includes(serviceDate);
 }
 
-function getScheduleInfoByServiceDate(serviceDate, settings) {
+function getWeekNoByServiceDate(serviceDate, settings) {
   const serviceDateObj = typeof serviceDate === 'string' ? parseDateString(serviceDate) : serviceDate;
   const serviceDateKey = formatDate(serviceDateObj);
+  const cache = getSettingsRuntimeCache(settings);
+  if (cache.weekNoByDate.has(serviceDateKey)) {
+    return cache.weekNoByDate.get(serviceDateKey);
+  }
   const semesterStart = parseDateString(settings.semesterStartDate);
   const diffDays = Math.floor((getChinaDateStart(serviceDateObj).getTime() - getChinaDateStart(semesterStart).getTime()) / ONE_DAY_MS);
   const weekNo = Math.floor(diffDays / 7) + 1;
+  cache.weekNoByDate.set(serviceDateKey, weekNo);
+  return weekNo;
+}
+
+function getClosedDutyTimeline(settings) {
+  const cache = getSettingsRuntimeCache(settings);
+  if (cache.closedDutyTimeline) {
+    return cache.closedDutyTimeline;
+  }
+
+  cache.closedDutyTimeline = normalizeClosedDates(settings.closedDates)
+    .map((item) => {
+      try {
+        const dateObj = parseDateString(item);
+        return {
+          serviceDate: item,
+          timestamp: getChinaDateStart(dateObj).getTime(),
+          weekNo: getWeekNoByServiceDate(dateObj, settings)
+        };
+      } catch (error) {
+        return null;
+      }
+    })
+    .filter((item) => item && item.weekNo >= settings.dutyStartWeek)
+    .sort((a, b) => a.timestamp - b.timestamp);
+
+  return cache.closedDutyTimeline;
+}
+
+function getClosedDutyCountBeforeServiceDate(serviceDateObj, settings) {
+  const serviceDateKey = formatDate(serviceDateObj);
+  const cache = getSettingsRuntimeCache(settings);
+  if (cache.closedDutyCountByDate.has(serviceDateKey)) {
+    return cache.closedDutyCountByDate.get(serviceDateKey);
+  }
+
+  const currentServiceDate = getChinaDateStart(serviceDateObj).getTime();
+  const closedDutyTimeline = getClosedDutyTimeline(settings);
+  let count = 0;
+  for (let index = 0; index < closedDutyTimeline.length; index += 1) {
+    if (closedDutyTimeline[index].timestamp >= currentServiceDate) {
+      break;
+    }
+    count += 1;
+  }
+  cache.closedDutyCountByDate.set(serviceDateKey, count);
+  return count;
+}
+
+function getScheduleInfoByServiceDate(serviceDate, settings) {
+  const serviceDateObj = typeof serviceDate === 'string' ? parseDateString(serviceDate) : serviceDate;
+  const serviceDateKey = formatDate(serviceDateObj);
+  const cache = getSettingsRuntimeCache(settings);
+  if (cache.scheduleInfoByDate.has(serviceDateKey)) {
+    return cache.scheduleInfoByDate.get(serviceDateKey);
+  }
+  const weekNo = getWeekNoByServiceDate(serviceDateObj, settings);
   const dutyStarted = weekNo >= settings.dutyStartWeek;
-  const groupId = dutyStarted ? ((weekNo - settings.dutyStartWeek) % 4 + 4) % 4 + 1 : 0;
+  const closedDutyCountBefore = dutyStarted ? getClosedDutyCountBeforeServiceDate(serviceDateObj, settings) : 0;
+  const groupSequenceIndex = weekNo - settings.dutyStartWeek - closedDutyCountBefore;
+  const groupId = dutyStarted ? ((groupSequenceIndex % 4) + 4) % 4 + 1 : 0;
   const groupName = getGroupName(groupId);
   const isManuallyClosed = isDateManuallyClosed(settings, serviceDateKey);
   const isDutyOpen = dutyStarted && !isManuallyClosed;
@@ -229,7 +321,7 @@ function getScheduleInfoByServiceDate(serviceDate, settings) {
       ? `第${weekNo}周 · ${groupName}值班（已关闭预约）`
       : `第${weekNo}周 · ${groupName}值班`;
 
-  return {
+  const scheduleInfo = {
     serviceDate: serviceDateKey,
     serviceDateLabel: formatDateLabel(serviceDateObj),
     weekNo,
@@ -241,6 +333,8 @@ function getScheduleInfoByServiceDate(serviceDate, settings) {
     description,
     serviceDateObj
   };
+  cache.scheduleInfoByDate.set(serviceDateKey, scheduleInfo);
+  return scheduleInfo;
 }
 function buildUpcomingDateOptions(settings, now = getChinaNow()) {
   const startSaturday = getCurrentOrNextSaturday(now);
@@ -267,6 +361,16 @@ function buildAdminManageDateOptions(settings, now = getChinaNow(), weeks = SEME
 
 function buildDutyCheckInDateOptions(settings, weeks = SEMESTER_DUTY_PREVIEW_WEEKS) {
   return buildSemesterDutyPreview(settings, weeks).filter((item) => item.dutyStarted);
+}
+
+function getAppointmentGroupInfo(item, settings) {
+  const scheduleInfo = getScheduleInfoByServiceDate(item.serviceDate, settings);
+  return {
+    groupId: scheduleInfo.groupId,
+    groupName: scheduleInfo.groupName,
+    weekNo: scheduleInfo.weekNo,
+    serviceDateLabel: scheduleInfo.serviceDateLabel
+  };
 }
 
 function normalizeStaffStatus(profile) {
@@ -298,6 +402,7 @@ function normalizeStaffProfile(profile) {
 
 function decorateAppointment(item, settings, now = getChinaNow()) {
   const scheduleInfo = getScheduleInfoByServiceDate(item.serviceDate, settings);
+  const appointmentGroupInfo = getAppointmentGroupInfo(item, settings);
   const serviceDateStart = getChinaDateStart(parseDateString(item.serviceDate));
   let statusText = '待服务';
   if (item.status === 'completed') {
@@ -320,9 +425,9 @@ function decorateAppointment(item, settings, now = getChinaNow()) {
     request: item.request,
     status: item.status,
     statusText,
-    groupId: item.groupId || scheduleInfo.groupId,
-    groupName: item.groupName || scheduleInfo.groupName,
-    weekNo: item.weekNo || scheduleInfo.weekNo,
+    groupId: appointmentGroupInfo.groupId,
+    groupName: appointmentGroupInfo.groupName,
+    weekNo: appointmentGroupInfo.weekNo,
     createdAt: item.createdAt || null,
     closedAt: item.closedAt || null,
     closedBy: item.closedBy || '',
@@ -439,6 +544,34 @@ function pickSelectedDate(requestedDate, dateOptions) {
 
 function sortAppointmentsBySlot(a, b) {
   return (SLOT_ORDER[a.slotId] || 99) - (SLOT_ORDER[b.slotId] || 99);
+}
+
+function pickAdminBookingQueryDate(requestedDate, dutyDateOptions, now = getChinaNow()) {
+  if (!dutyDateOptions.length) {
+    return null;
+  }
+  return dutyDateOptions.find((item) => item.serviceDate === requestedDate)
+    || dutyDateOptions.find((item) => !isServiceDateNotStarted(item.serviceDateObj, now) && now <= getServiceDateEnd(item.serviceDateObj))
+    || dutyDateOptions.find((item) => isServiceDateNotStarted(item.serviceDateObj, now))
+    || dutyDateOptions[dutyDateOptions.length - 1];
+}
+
+function sortAdminQueryAppointments(a, b) {
+  const slotOrderDiff = sortAppointmentsBySlot(a, b);
+  if (slotOrderDiff !== 0) {
+    return slotOrderDiff;
+  }
+  if (a.status !== b.status) {
+    if (a.status === 'booked') {
+      return -1;
+    }
+    if (b.status === 'booked') {
+      return 1;
+    }
+  }
+  const createdAtA = a.createdAt ? new Date(a.createdAt).getTime() : 0;
+  const createdAtB = b.createdAt ? new Date(b.createdAt).getTime() : 0;
+  return createdAtA - createdAtB;
 }
 
 async function ensureSettings() {
@@ -571,6 +704,13 @@ function buildDutyCheckInMemberLists(selectedDutyDate, approvedStaffMembers, sig
   return { signedMembers, unsignedMembers };
 }
 
+async function getApprovedStaffMembers() {
+  const profileResult = await db.collection(STAFF_PROFILE_COLLECTION).orderBy('updatedAt', 'desc').limit(200).get();
+  return (profileResult.data || [])
+    .filter((item) => normalizeStaffStatus(item) === 'approved')
+    .map((item) => normalizeStaffProfile(item));
+}
+
 function buildDutyCheckInExportBuffer(selectedDutyDate, signedMembers = [], unsignedMembers = []) {
   const rows = []
     .concat((signedMembers || []).map((item, index) => `
@@ -632,6 +772,38 @@ async function createDutyCheckInQrCode(serviceDate) {
   return uploadResult.fileID;
 }
 
+async function ensureDutyCheckInQrCode(serviceDate, scheduleInfo, signInRecord = null) {
+  if (signInRecord && signInRecord.qrCodeFileID) {
+    return signInRecord.qrCodeFileID;
+  }
+
+  const qrCodeFileID = await createDutyCheckInQrCode(serviceDate);
+  const docRef = db.collection(DUTY_SIGNINS_COLLECTION).doc(serviceDate);
+
+  if (signInRecord) {
+    await docRef.update({
+      data: {
+        qrCodeFileID,
+        updatedAt: db.serverDate()
+      }
+    });
+  } else {
+    await docRef.set({
+      data: {
+        serviceDate,
+        weekNo: scheduleInfo.weekNo,
+        groupId: scheduleInfo.groupId,
+        groupName: scheduleInfo.groupName,
+        records: [],
+        qrCodeFileID,
+        updatedAt: db.serverDate()
+      }
+    });
+  }
+
+  return qrCodeFileID;
+}
+
 function validateBookingInput(payload = {}) {
   const { serviceDate, slotId, appointmentType, name, phone, request, privacyConsent, agreementConsent } = payload;
   if (!serviceDate) throw new Error('请选择预约日期');
@@ -647,11 +819,16 @@ async function getAppData(openid, event = {}) {
   const settings = await ensureSettings();
   const now = getChinaNow();
   const baseDateOptions = buildUpcomingDateOptions(settings, now);
-  const myAppointments = await getMyAppointments(openid, settings, now);
+  const serviceDates = baseDateOptions.map((item) => item.serviceDate);
+  const [myAppointments, allAppointments, rawStaffProfile, semesterSummary] = await Promise.all([
+    getMyAppointments(openid, settings, now),
+    getAppointmentsByServiceDates(serviceDates),
+    getStaffProfile(openid),
+    getSemesterSummary(settings)
+  ]);
   const myActiveAppointmentDates = new Set(myAppointments.filter((item) => item.status === 'booked' || item.status === 'completed').map((item) => item.serviceDate));
   const dateOptions = baseDateOptions.map((item) => ({ ...item, hasMyAppointment: myActiveAppointmentDates.has(item.serviceDate) }));
   const selectedDateOption = pickSelectedDate(event.selectedDate, dateOptions);
-  const allAppointments = await getAppointmentsByServiceDates(dateOptions.map((item) => item.serviceDate));
   const selectedDateAppointments = selectedDateOption ? allAppointments.filter((item) => item.serviceDate === selectedDateOption.serviceDate) : [];
   const slots = selectedDateOption ? buildSlotStatus(parseDateString(selectedDateOption.serviceDate), selectedDateOption, selectedDateAppointments, settings, now) : [];
   const scheduleOverview = buildScheduleOverview(dateOptions, allAppointments, settings, now);
@@ -660,8 +837,7 @@ async function getAppData(openid, event = {}) {
     serviceDateLabel: item.serviceDateLabel,
     slots: item.slots
   }));
-  const staffProfile = normalizeStaffProfile(await getStaffProfile(openid));
-  const semesterSummary = await getSemesterSummary(settings);
+  const staffProfile = normalizeStaffProfile(rawStaffProfile);
   const isAdmin = isAdminOpenId(openid, settings);
 
   let groupSchedules = [];
@@ -671,7 +847,7 @@ async function getAppData(openid, event = {}) {
       .map((schedule) => ({
         ...schedule,
         appointments: allAppointments
-          .filter((item) => item.status !== 'cancelled' && item.serviceDate === schedule.serviceDate && (Number(item.groupId) || getScheduleInfoByServiceDate(item.serviceDate, settings).groupId) === staffProfile.groupId)
+          .filter((item) => item.status !== 'cancelled' && item.serviceDate === schedule.serviceDate && getAppointmentGroupInfo(item, settings).groupId === staffProfile.groupId)
           .map((item) => decorateAppointment(item, settings, now))
           .sort(sortAppointmentsBySlot)
       }));
@@ -705,15 +881,273 @@ async function getAppData(openid, event = {}) {
   };
 }
 
+async function getHomeData(event = {}) {
+  const settings = await ensureSettings();
+  const now = getChinaNow();
+  const dateOptions = buildUpcomingDateOptions(settings, now);
+  const serviceDates = dateOptions.map((item) => item.serviceDate);
+  const [allAppointments, semesterSummary] = await Promise.all([
+    getAppointmentsByServiceDates(serviceDates),
+    getSemesterSummary(settings)
+  ]);
+  const selectedDateOption = pickSelectedDate(event.selectedDate, dateOptions);
+  const selectedDateAppointments = selectedDateOption ? allAppointments.filter((item) => item.serviceDate === selectedDateOption.serviceDate) : [];
+  const slots = selectedDateOption ? buildSlotStatus(parseDateString(selectedDateOption.serviceDate), selectedDateOption, selectedDateAppointments, settings, now) : [];
+  const scheduleOverview = buildScheduleOverview(dateOptions, allAppointments, settings, now);
+
+  return {
+    selectedDate: selectedDateOption ? selectedDateOption.serviceDate : '',
+    selectedDateLabel: selectedDateOption ? selectedDateOption.serviceDateLabel : '',
+    summary: {
+      totalCount: TOTAL_CAPACITY_PER_DATE,
+      bookedCount: selectedDateAppointments.filter((item) => item.status === 'booked').length,
+      completedCount: selectedDateAppointments.filter((item) => item.status === 'completed').length,
+      availableCount: slots.reduce((sum, item) => sum + (item.status === 'available' ? item.remainingCount : 0), 0)
+    },
+    semesterSummary,
+    scheduleOverview
+  };
+}
+
+async function getBookingData(openid, event = {}) {
+  const settings = await ensureSettings();
+  const now = getChinaNow();
+  const baseDateOptions = buildUpcomingDateOptions(settings, now);
+  const serviceDates = baseDateOptions.map((item) => item.serviceDate);
+  const [myAppointments, allAppointments] = await Promise.all([
+    getMyAppointments(openid, settings, now),
+    getAppointmentsByServiceDates(serviceDates)
+  ]);
+  const myActiveAppointmentDates = new Set(myAppointments.filter((item) => item.status === 'booked' || item.status === 'completed').map((item) => item.serviceDate));
+  const dateOptions = baseDateOptions.map((item) => ({ ...item, hasMyAppointment: myActiveAppointmentDates.has(item.serviceDate) }));
+  const selectedDateOption = pickSelectedDate(event.selectedDate, dateOptions);
+  const selectedDateAppointments = selectedDateOption ? allAppointments.filter((item) => item.serviceDate === selectedDateOption.serviceDate) : [];
+  const slots = selectedDateOption ? buildSlotStatus(parseDateString(selectedDateOption.serviceDate), selectedDateOption, selectedDateAppointments, settings, now) : [];
+  const scheduleOverview = buildScheduleOverview(dateOptions, allAppointments, settings, now);
+  const slotOptionsByDate = scheduleOverview.map((item) => ({
+    serviceDate: item.serviceDate,
+    serviceDateLabel: item.serviceDateLabel,
+    slots: item.slots
+  }));
+
+  return {
+    selectedDate: selectedDateOption ? selectedDateOption.serviceDate : '',
+    selectedDateLabel: selectedDateOption ? selectedDateOption.serviceDateLabel : '',
+    dateOptions,
+    slots,
+    slotOptionsByDate,
+    myAppointments
+  };
+}
+
+async function getBookingQueryData(openid) {
+  const settings = await ensureSettings();
+  const now = getChinaNow();
+  const [myAppointments] = await Promise.all([
+    getMyAppointments(openid, settings, now)
+  ]);
+  const dutyDateOptions = buildSemesterDutyPreview(settings)
+    .filter((item) => item.dutyStarted)
+    .map((item) => ({
+      serviceDate: item.serviceDate,
+      serviceDateLabel: item.serviceDateLabel,
+      weekNo: item.weekNo,
+      groupId: item.groupId,
+      groupName: item.groupName,
+      isManuallyClosed: item.isManuallyClosed,
+      description: item.description
+    }));
+
+  return {
+    myAppointments,
+    dutyDateOptions
+  };
+}
+
+async function getUserData(openid) {
+  const settings = await ensureSettings();
+  const rawStaffProfile = await getStaffProfile(openid);
+  const staffProfile = normalizeStaffProfile(rawStaffProfile);
+  const isAdmin = isAdminOpenId(openid, settings);
+
+  return {
+    staffProfile,
+    permissions: { isAdmin },
+    staffBindingCodeEnabled: Boolean(settings.staffBindingCode)
+  };
+}
+
+async function getUserDutySchedules(openid) {
+  const settings = await ensureSettings();
+  const now = getChinaNow();
+  const staffProfile = normalizeStaffProfile(await getStaffProfile(openid));
+
+  if (!staffProfile.isStaff || !staffProfile.groupId) {
+    return {
+      staffProfile,
+      groupSchedules: []
+    };
+  }
+
+  const currentWeekDutySchedule = buildDutyCheckInDateOptions(settings)
+    .find((item) => item.groupId === staffProfile.groupId && item.dutyStarted && isCurrentWeekServiceDate(item.serviceDateObj, now));
+
+  const nextDutySchedule = currentWeekDutySchedule || buildUpcomingDateOptions(settings, now)
+    .find((item) => item.groupId === staffProfile.groupId && item.dutyStarted && !item.isManuallyClosed);
+
+  if (!nextDutySchedule) {
+    return {
+      staffProfile,
+      groupSchedules: []
+    };
+  }
+
+  const allAppointments = await getAppointmentsByServiceDates([nextDutySchedule.serviceDate]);
+  const scheduleAppointments = allAppointments
+    .filter((item) => item.status !== 'cancelled' && item.serviceDate === nextDutySchedule.serviceDate)
+    .map((item) => decorateAppointment(item, settings, now))
+    .sort(sortAppointmentsBySlot);
+
+  const bookedCount = scheduleAppointments.filter((item) => item.status === 'booked').length;
+  const completedCount = scheduleAppointments.filter((item) => item.status === 'completed').length;
+  const slots = buildSlotStatus(parseDateString(nextDutySchedule.serviceDate), nextDutySchedule, allAppointments.filter((item) => item.serviceDate === nextDutySchedule.serviceDate), settings, now);
+  const availableCount = slots.reduce((sum, item) => sum + (item.status === 'available' ? item.remainingCount : 0), 0);
+  const summaryText = !nextDutySchedule.dutyStarted ? '未开始' : nextDutySchedule.isManuallyClosed ? '已关闭' : `剩余 ${availableCount}/${TOTAL_CAPACITY_PER_DATE}`;
+  const groupSchedules = [{
+    ...nextDutySchedule,
+    bookedCount,
+    completedCount,
+    availableCount,
+    summaryText,
+    slots,
+    manageKey: nextDutySchedule.serviceDate,
+    appointments: scheduleAppointments
+  }];
+
+  return {
+    staffProfile,
+    groupSchedules
+  };
+}
+
+async function getAdminDashboardData(openid) {
+  const settings = await ensureSettings();
+  assertAdmin(openid, settings);
+
+  const profileResult = await db.collection(STAFF_PROFILE_COLLECTION).orderBy('updatedAt', 'desc').limit(200).get();
+  const profiles = profileResult.data || [];
+  const staffRequestCount = profiles.filter((item) => normalizeStaffStatus(item) === 'pending').length;
+  const staffMemberCount = profiles.filter((item) => normalizeStaffStatus(item) === 'approved').length;
+
+  return {
+    staffRequestCount,
+    staffMemberCount,
+    semesterConfig: {
+      semesterStartDate: settings.semesterStartDate,
+      dutyStartWeek: settings.dutyStartWeek
+    }
+  };
+}
+
+async function getStaffRequestAdminData(openid) {
+  const settings = await ensureSettings();
+  assertAdmin(openid, settings);
+
+  const profileResult = await db.collection(STAFF_PROFILE_COLLECTION).orderBy('updatedAt', 'desc').limit(200).get();
+  const profiles = profileResult.data || [];
+  const staffRequests = profiles.filter((item) => normalizeStaffStatus(item) === 'pending').map((item) => ({
+    openId: item._id,
+    staffName: item.staffName || '',
+    status: 'pending',
+    appliedAt: item.appliedAt || null,
+    updatedAt: item.updatedAt || null
+  }));
+
+  return {
+    groupOptions: GROUP_OPTIONS,
+    staffBindingCode: settings.staffBindingCode,
+    staffRequests
+  };
+}
+
+async function getStaffGroupAdminData(openid) {
+  const settings = await ensureSettings();
+  assertAdmin(openid, settings);
+
+  const profileResult = await db.collection(STAFF_PROFILE_COLLECTION).orderBy('updatedAt', 'desc').limit(200).get();
+  const profiles = profileResult.data || [];
+  const staffMembers = profiles.filter((item) => normalizeStaffStatus(item) === 'approved').map((item) => {
+    const profile = normalizeStaffProfile(item);
+    return {
+      openId: item._id,
+      staffName: profile.staffName,
+      groupId: profile.groupId,
+      groupName: profile.groupName,
+      approvedAt: item.approvedAt || null,
+      updatedAt: item.updatedAt || null
+    };
+  });
+
+  return {
+    groupOptions: GROUP_OPTIONS,
+    staffMembers
+  };
+}
+
+async function getAdminBookingQueryData(openid, event = {}) {
+  const settings = await ensureSettings();
+  assertAdmin(openid, settings);
+  const now = getChinaNow();
+  const dutyDateOptions = buildDutyCheckInDateOptions(settings);
+  const selectedDutyDate = pickAdminBookingQueryDate(event.selectedDate, dutyDateOptions, now);
+  const selectedDate = selectedDutyDate ? selectedDutyDate.serviceDate : '';
+  const appointments = selectedDate
+    ? (await getAppointmentsByServiceDates([selectedDate]))
+      .filter((item) => item.status !== 'cancelled')
+      .map((item) => decorateAppointment(item, settings, now))
+      .sort(sortAdminQueryAppointments)
+    : [];
+
+  return {
+    selectedDate,
+    selectedDutyDate: selectedDutyDate ? {
+      serviceDate: selectedDutyDate.serviceDate,
+      serviceDateLabel: selectedDutyDate.serviceDateLabel,
+      weekNo: selectedDutyDate.weekNo,
+      groupId: selectedDutyDate.groupId,
+      groupName: selectedDutyDate.groupName,
+      isManuallyClosed: selectedDutyDate.isManuallyClosed,
+      description: selectedDutyDate.description
+    } : null,
+    dutyDateOptions: dutyDateOptions.map((item) => ({
+      serviceDate: item.serviceDate,
+      serviceDateLabel: item.serviceDateLabel,
+      weekNo: item.weekNo,
+      groupId: item.groupId,
+      groupName: item.groupName,
+      isManuallyClosed: item.isManuallyClosed,
+      description: item.description
+    })),
+    summary: {
+      totalCount: appointments.length,
+      bookedCount: appointments.filter((item) => item.status === 'booked').length,
+      completedCount: appointments.filter((item) => item.status === 'completed').length
+    },
+    appointments
+  };
+}
+
 async function getAdminData(openid) {
   const settings = await ensureSettings();
   assertAdmin(openid, settings);
   const now = getChinaNow();
   const dateOptions = buildAdminManageDateOptions(settings, now);
-  const appointments = await getAppointmentsByServiceDates(dateOptions.map((item) => item.serviceDate));
+  const [appointments, profileResult] = await Promise.all([
+    getAppointmentsByServiceDates(dateOptions.map((item) => item.serviceDate)),
+    db.collection(STAFF_PROFILE_COLLECTION).orderBy('updatedAt', 'desc').limit(200).get()
+  ]);
   const scheduleOverview = buildScheduleOverview(dateOptions, appointments, settings, now);
   const semesterDutyPreview = buildSemesterDutyPreview(settings);
-  const profileResult = await db.collection(STAFF_PROFILE_COLLECTION).orderBy('updatedAt', 'desc').limit(200).get();
   const profiles = profileResult.data || [];
 
   const staffRequests = profiles.filter((item) => normalizeStaffStatus(item) === 'pending').map((item) => ({
@@ -757,20 +1191,21 @@ async function getDutyCheckInAdminData(openid, event = {}) {
   const now = getChinaNow();
   const dutyDateOptions = buildDutyCheckInDateOptions(settings);
   const selectedDutyDate = pickDutyCheckInDate(event.selectedDate, dutyDateOptions, now);
-  const profileResult = await db.collection(STAFF_PROFILE_COLLECTION).orderBy('updatedAt', 'desc').limit(200).get();
-  const approvedStaffMembers = (profileResult.data || [])
-    .filter((item) => normalizeStaffStatus(item) === 'approved')
-    .map((item) => normalizeStaffProfile(item));
-  const signInRecords = await getDutySignInByServiceDates(dutyDateOptions.map((item) => item.serviceDate));
+  const [approvedStaffMembers, signInRecords] = await Promise.all([
+    getApprovedStaffMembers(),
+    getDutySignInByServiceDates(dutyDateOptions.map((item) => item.serviceDate))
+  ]);
   const dutyDates = buildDutyCheckInSummaryByDate(dutyDateOptions, approvedStaffMembers, signInRecords);
   const selectedSignInRecord = selectedDutyDate ? signInRecords.find((item) => item.serviceDate === selectedDutyDate.serviceDate) : null;
   const { signedMembers, unsignedMembers } = buildDutyCheckInMemberLists(selectedDutyDate, approvedStaffMembers, selectedSignInRecord);
-  const qrCodeFileID = selectedDutyDate ? await createDutyCheckInQrCode(selectedDutyDate.serviceDate) : '';
+  const canGenerateQrCode = selectedDutyDate ? canGenerateDutyCheckInQrCode(selectedDutyDate.serviceDateObj, now) : false;
+  const qrCodeFileID = canGenerateQrCode && selectedSignInRecord && selectedSignInRecord.qrCodeFileID ? selectedSignInRecord.qrCodeFileID : '';
 
   return {
     selectedDate: selectedDutyDate ? selectedDutyDate.serviceDate : '',
     selectedDutyDate: selectedDutyDate ? {
       ...selectedDutyDate,
+      canGenerateQrCode,
       qrCodeFileID
     } : null,
     dutyDates,
@@ -779,12 +1214,66 @@ async function getDutyCheckInAdminData(openid, event = {}) {
   };
 }
 
+async function getDutyCheckInDetail(openid, event = {}) {
+  const settings = await ensureSettings();
+  assertAdmin(openid, settings);
+  const now = getChinaNow();
+  const serviceDate = formatDate(parseDateString(event.serviceDate));
+  const dutyDateOptions = buildDutyCheckInDateOptions(settings);
+  const selectedDutyDate = dutyDateOptions.find((item) => item.serviceDate === serviceDate);
+  if (!selectedDutyDate) {
+    throw new Error('未找到对应值班日期');
+  }
+
+  const [approvedStaffMembers, signInRecord] = await Promise.all([
+    getApprovedStaffMembers(),
+    getDutySignInByServiceDate(serviceDate)
+  ]);
+  const { signedMembers, unsignedMembers } = buildDutyCheckInMemberLists(selectedDutyDate, approvedStaffMembers, signInRecord);
+  const canGenerateQrCode = canGenerateDutyCheckInQrCode(selectedDutyDate.serviceDateObj, now);
+
+  return {
+    selectedDate: selectedDutyDate.serviceDate,
+    selectedDutyDate: {
+      ...selectedDutyDate,
+      canGenerateQrCode,
+      qrCodeFileID: canGenerateQrCode && signInRecord && signInRecord.qrCodeFileID ? signInRecord.qrCodeFileID : ''
+    },
+    signedMembers,
+    unsignedMembers
+  };
+}
+
+async function getDutyCheckInQrCode(openid, event = {}) {
+  const settings = await ensureSettings();
+  assertAdmin(openid, settings);
+  const now = getChinaNow();
+  const serviceDate = formatDate(parseDateString(event.serviceDate));
+  const scheduleInfo = getScheduleInfoByServiceDate(serviceDate, settings);
+  if (!scheduleInfo.dutyStarted) {
+    throw new Error('该日期尚未安排值班');
+  }
+  if (!canGenerateDutyCheckInQrCode(scheduleInfo.serviceDateObj, now)) {
+    throw new Error('仅本周且尚未结束的值班日期可生成签到二维码');
+  }
+
+  const signInRecord = await getDutySignInByServiceDate(serviceDate);
+  const qrCodeFileID = await ensureDutyCheckInQrCode(serviceDate, scheduleInfo, signInRecord);
+  return {
+    serviceDate,
+    qrCodeFileID
+  };
+}
+
 async function getDutyCheckInPageData(openid, event = {}) {
   const settings = await ensureSettings();
   const serviceDate = formatDate(parseDateString(event.serviceDate));
   const scheduleInfo = getScheduleInfoByServiceDate(serviceDate, settings);
-  const staffProfile = normalizeStaffProfile(await getStaffProfile(openid));
-  const signInRecord = await getDutySignInByServiceDate(serviceDate);
+  const [rawStaffProfile, signInRecord] = await Promise.all([
+    getStaffProfile(openid),
+    getDutySignInByServiceDate(serviceDate)
+  ]);
+  const staffProfile = normalizeStaffProfile(rawStaffProfile);
   const currentRecord = signInRecord && Array.isArray(signInRecord.records)
     ? signInRecord.records.find((item) => item.openId === openid)
     : null;
@@ -972,18 +1461,21 @@ async function createAppointment(openid, event) {
   if (isDateManuallyClosed(settings, scheduleInfo.serviceDate)) throw new Error('该日预约已由管理员关闭');
   if (now >= targetSlot.start) throw new Error('该时段已停止预约');
 
-  const slotAppointment = await db.collection(APPOINTMENTS_COLLECTION)
-    .where({ serviceDate: scheduleInfo.serviceDate, slotId: event.slotId, status: _.in(['booked', 'completed']) })
-    .limit(MAX_APPOINTMENTS_PER_SLOT)
-    .get();
+  const [slotAppointment, mySameDateAppointment] = await Promise.all([
+    db.collection(APPOINTMENTS_COLLECTION)
+      .where({ serviceDate: scheduleInfo.serviceDate, slotId: event.slotId, status: _.in(['booked', 'completed']) })
+      .limit(MAX_APPOINTMENTS_PER_SLOT)
+      .get(),
+    db.collection(APPOINTMENTS_COLLECTION)
+      .where({ serviceDate: scheduleInfo.serviceDate, userOpenId: openid, status: _.in(['booked', 'completed']) })
+      .limit(1)
+      .get()
+  ]);
+
   if (slotAppointment.data.length >= MAX_APPOINTMENTS_PER_SLOT) {
     throw new Error(`该时段预约人数已满（最多 ${MAX_APPOINTMENTS_PER_SLOT} 人）`);
   }
 
-  const mySameDateAppointment = await db.collection(APPOINTMENTS_COLLECTION)
-    .where({ serviceDate: scheduleInfo.serviceDate, userOpenId: openid, status: _.in(['booked', 'completed']) })
-    .limit(1)
-    .get();
   if (mySameDateAppointment.data.length > 0) {
     throw new Error('你在该日期已经提交过预约');
   }
@@ -1030,6 +1522,55 @@ async function cancelAppointment(openid, event = {}) {
 
   await db.collection(APPOINTMENTS_COLLECTION).doc(appointmentId).update({ data: { status: 'cancelled', cancelledAt: db.serverDate() } });
   return { appointmentId };
+}
+
+async function adminUpdateAppointmentStatus(openid, event = {}) {
+  const appointmentId = String(event.appointmentId || '').trim();
+  const targetStatus = String(event.status || '').trim();
+  if (!appointmentId) throw new Error('缺少预约单信息');
+  if (!['booked', 'completed', 'cancelled'].includes(targetStatus)) {
+    throw new Error('目标预约状态无效');
+  }
+
+  const settings = await ensureSettings();
+  assertAdmin(openid, settings);
+
+  const appointmentResult = await db.collection(APPOINTMENTS_COLLECTION).doc(appointmentId).get();
+  const appointment = appointmentResult.data;
+  if (!appointment) throw new Error('预约单不存在');
+  if (appointment.status === targetStatus) {
+    throw new Error('预约状态未发生变化');
+  }
+  if (appointment.status === 'completed' && targetStatus === 'cancelled') {
+    throw new Error('已结单预约无法取消');
+  }
+
+  const updatePayload = {
+    status: targetStatus
+  };
+
+  if (targetStatus === 'completed') {
+    updatePayload.closedAt = db.serverDate();
+    updatePayload.closedBy = '管理员';
+  } else {
+    updatePayload.closedAt = null;
+    updatePayload.closedBy = '';
+  }
+
+  if (targetStatus === 'cancelled') {
+    updatePayload.cancelledAt = db.serverDate();
+  } else {
+    updatePayload.cancelledAt = null;
+  }
+
+  await db.collection(APPOINTMENTS_COLLECTION).doc(appointmentId).update({
+    data: updatePayload
+  });
+
+  return {
+    appointmentId,
+    status: targetStatus
+  };
 }
 
 async function submitStaffRequest(openid, event = {}) {
@@ -1218,7 +1759,7 @@ async function completeAppointment(openid, event = {}) {
   if (appointment.status === 'completed') throw new Error('该预约单已结单');
   if (appointment.status === 'cancelled') throw new Error('已取消预约不能结单');
 
-  const appointmentGroupId = Number(appointment.groupId) || getScheduleInfoByServiceDate(appointment.serviceDate, settings).groupId;
+  const appointmentGroupId = getAppointmentGroupInfo(appointment, settings).groupId;
   if (appointmentGroupId !== staffProfile.groupId) throw new Error('你没有该预约的结单权限');
 
   await db.collection(APPOINTMENTS_COLLECTION).doc(appointmentId).update({
@@ -1279,10 +1820,32 @@ exports.main = async (event = {}) => {
         };
       case 'getAppData':
         return { success: true, data: await getAppData(OPENID, event) };
+      case 'getHomeData':
+        return { success: true, data: await getHomeData(event) };
+      case 'getBookingData':
+        return { success: true, data: await getBookingData(OPENID, event) };
+      case 'getBookingQueryData':
+        return { success: true, data: await getBookingQueryData(OPENID) };
+      case 'getUserData':
+        return { success: true, data: await getUserData(OPENID) };
+      case 'getUserDutySchedules':
+        return { success: true, data: await getUserDutySchedules(OPENID) };
+      case 'getAdminDashboardData':
+        return { success: true, data: await getAdminDashboardData(OPENID) };
+      case 'getStaffRequestAdminData':
+        return { success: true, data: await getStaffRequestAdminData(OPENID) };
+      case 'getStaffGroupAdminData':
+        return { success: true, data: await getStaffGroupAdminData(OPENID) };
+      case 'getAdminBookingQueryData':
+        return { success: true, data: await getAdminBookingQueryData(OPENID, event) };
       case 'getAdminData':
         return { success: true, data: await getAdminData(OPENID) };
       case 'getDutyCheckInAdminData':
         return { success: true, data: await getDutyCheckInAdminData(OPENID, event) };
+      case 'getDutyCheckInDetail':
+        return { success: true, data: await getDutyCheckInDetail(OPENID, event) };
+      case 'getDutyCheckInQrCode':
+        return { success: true, data: await getDutyCheckInQrCode(OPENID, event) };
       case 'getDutyCheckInPageData':
         return { success: true, data: await getDutyCheckInPageData(OPENID, event) };
       case 'updateDutyCheckInStatus':
@@ -1293,6 +1856,8 @@ exports.main = async (event = {}) => {
         return { success: true, data: await createAppointment(OPENID, event) };
       case 'cancelAppointment':
         return { success: true, data: await cancelAppointment(OPENID, event) };
+      case 'adminUpdateAppointmentStatus':
+        return { success: true, data: await adminUpdateAppointmentStatus(OPENID, event) };
       case 'submitStaffRequest':
       case 'bindStaff':
         return { success: true, data: await submitStaffRequest(OPENID, event) };

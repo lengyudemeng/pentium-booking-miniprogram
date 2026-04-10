@@ -1,4 +1,5 @@
 const service = require('../../../utils/service');
+const DUTY_ITEM_BATCH_SIZE = 8;
 
 function hasDutyStarted(serviceDate) {
   if (!serviceDate) {
@@ -76,6 +77,8 @@ Page({
     savingSemester: false,
     updatingDateKey: '',
     semesterDutyItems: [],
+    renderedDutyItemCount: 0,
+    hasMoreDutyItems: false,
     semesterForm: {
       semesterStartDate: '',
       dutyStartWeek: 1
@@ -90,6 +93,16 @@ Page({
     this.loadData();
   },
 
+  setDutyItemList(items = [], renderedDutyItemCount = DUTY_ITEM_BATCH_SIZE) {
+    this.allSemesterDutyItems = items;
+    const nextCount = Math.min(renderedDutyItemCount, items.length);
+    this.setData({
+      semesterDutyItems: items.slice(0, nextCount),
+      renderedDutyItemCount: nextCount,
+      hasMoreDutyItems: nextCount < items.length
+    });
+  },
+
   async loadData() {
     this.setData({ loading: true });
     try {
@@ -97,12 +110,12 @@ Page({
       const semesterDutyItems = mergeDutyItems(data.semesterDutyPreview || [], data.scheduleOverview || []);
       this.setData({
         loading: false,
-        semesterDutyItems,
         semesterForm: {
           semesterStartDate: data.semesterConfig.semesterStartDate,
           dutyStartWeek: data.semesterConfig.dutyStartWeek
         }
       });
+      this.setDutyItemList(semesterDutyItems);
     } catch (error) {
       this.setData({ loading: false });
       wx.showToast({ title: error.message || '加载失败', icon: 'none' });
@@ -139,6 +152,13 @@ Page({
     } finally {
       this.setData({ savingSemester: false });
     }
+  },
+
+  loadMoreDutyItems() {
+    if (!this.data.hasMoreDutyItems) {
+      return;
+    }
+    this.setDutyItemList(this.allSemesterDutyItems || [], this.data.renderedDutyItemCount + DUTY_ITEM_BATCH_SIZE);
   },
 
   async toggleDateAvailability(e) {
