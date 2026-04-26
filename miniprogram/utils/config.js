@@ -1,4 +1,4 @@
-const CLOUD_ENV = 'cloud1-8ga8dwq18d2469f4';
+const CLOUD_ENV = 'your cloud env';
 
 module.exports = {
   CLOUD_ENV

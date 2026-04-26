@@ -49,10 +49,14 @@ function sortAllAppointmentsForDisplay(appointments = []) {
     .slice()
     .sort(compareByServiceTimeAsc);
   const historyAppointments = appointments
-    .filter((item) => item.status !== 'booked')
+    .filter((item) => item.status !== 'booked' && item.status !== 'cancelled')
     .slice()
     .sort(compareByServiceTimeDesc);
   return upcomingAppointments.concat(historyAppointments);
+}
+
+function filterVisibleAppointments(appointments = []) {
+  return appointments.filter((item) => item.status !== 'cancelled');
 }
 
 Page({
@@ -82,7 +86,7 @@ Page({
     this.setData({ loading: true });
     try {
       const data = await service.getBookingQueryData();
-      const myAppointments = (data.myAppointments || []).filter((item) => item.status === 'booked' || item.status === 'completed');
+      const myAppointments = filterVisibleAppointments(data.myAppointments || []);
       const weeklyAppointments = myAppointments.filter((item) => isInCurrentWeek(item.serviceDate));
       const historyAppointments = myAppointments.filter((item) => !isInCurrentWeek(item.serviceDate));
       const historyDateOptions = (data.dutyDateOptions || []).slice().sort((a, b) => (a.serviceDate > b.serviceDate ? 1 : -1));
@@ -131,7 +135,7 @@ Page({
 
   queryAllHistory() {
     this.setData({
-      queryResults: sortAllAppointmentsForDisplay(this.data.myAppointments),
+      queryResults: sortAllAppointmentsForDisplay(filterVisibleAppointments(this.data.myAppointments)),
       historyQueryMode: 'all',
       historyEmptyText: '暂无预约记录'
     });

@@ -95,7 +95,11 @@ Page({
     const actionLoadingKey = `${appointmentId}-${status}`;
     this.setData({ actionLoadingKey });
     try {
-      await service.adminUpdateAppointmentStatus({ appointmentId, status });
+      if (status === 'cancelled') {
+        await service.cancelAppointment({ appointmentId, asAdmin: true });
+      } else {
+        await service.adminUpdateAppointmentStatus({ appointmentId, status });
+      }
       wx.showToast({ title: actionTextMap[status] || '操作成功', icon: 'success' });
       await this.loadData(this.data.selectedDate);
     } catch (error) {

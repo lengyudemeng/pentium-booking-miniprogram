@@ -633,9 +633,10 @@ async function getSemesterSummary(settings) {
   const semesterStartDate = settings.semesterStartDate;
   const bookedCountResult = await db.collection(APPOINTMENTS_COLLECTION).where({ serviceDate: _.gte(semesterStartDate), status: 'booked' }).count();
   const completedCountResult = await db.collection(APPOINTMENTS_COLLECTION).where({ serviceDate: _.gte(semesterStartDate), status: 'completed' }).count();
-  const bookedCount = bookedCountResult.total || 0;
+  const rawBookedCount = bookedCountResult.total || 0;
   const completedCount = completedCountResult.total || 0;
-  return { bookedCount, completedCount, totalCount: bookedCount + completedCount };
+  const bookedCount = rawBookedCount + completedCount;
+  return { bookedCount, completedCount, totalCount: bookedCount };
 }
 
 function pickDutyCheckInDate(requestedDate, dutyDateOptions, now = getChinaNow()) {
@@ -860,7 +861,7 @@ async function getAppData(openid, event = {}) {
     slots,
     summary: {
       totalCount: TOTAL_CAPACITY_PER_DATE,
-      bookedCount: selectedDateAppointments.filter((item) => item.status === 'booked').length,
+      bookedCount: selectedDateAppointments.filter((item) => item.status === 'booked' || item.status === 'completed').length,
       completedCount: selectedDateAppointments.filter((item) => item.status === 'completed').length,
       availableCount: slots.reduce((sum, item) => sum + (item.status === 'available' ? item.remainingCount : 0), 0)
     },
@@ -900,7 +901,7 @@ async function getHomeData(event = {}) {
     selectedDateLabel: selectedDateOption ? selectedDateOption.serviceDateLabel : '',
     summary: {
       totalCount: TOTAL_CAPACITY_PER_DATE,
-      bookedCount: selectedDateAppointments.filter((item) => item.status === 'booked').length,
+      bookedCount: selectedDateAppointments.filter((item) => item.status === 'booked' || item.status === 'completed').length,
       completedCount: selectedDateAppointments.filter((item) => item.status === 'completed').length,
       availableCount: slots.reduce((sum, item) => sum + (item.status === 'available' ? item.remainingCount : 0), 0)
     },
@@ -943,9 +944,10 @@ async function getBookingData(openid, event = {}) {
 async function getBookingQueryData(openid) {
   const settings = await ensureSettings();
   const now = getChinaNow();
-  const [myAppointments] = await Promise.all([
+  const [rawMyAppointments] = await Promise.all([
     getMyAppointments(openid, settings, now)
   ]);
+  const myAppointments = rawMyAppointments.filter((item) => item.status !== 'cancelled');
   const dutyDateOptions = buildSemesterDutyPreview(settings)
     .filter((item) => item.dutyStarted)
     .map((item) => ({
@@ -1507,18 +1509,23 @@ async function createAppointment(openid, event) {
 
 async function cancelAppointment(openid, event = {}) {
   const appointmentId = event.appointmentId;
+  const asAdmin = Boolean(event.asAdmin);
   if (!appointmentId) throw new Error('缺少预约单信息');
 
   const settings = await ensureSettings();
   const appointmentResult = await db.collection(APPOINTMENTS_COLLECTION).doc(appointmentId).get();
   const appointment = appointmentResult.data;
   if (!appointment) throw new Error('预约单不存在');
-  if (appointment.userOpenId !== openid) throw new Error('只能取消自己的预约');
   if (appointment.status === 'completed') throw new Error('已结单预约不能取消');
   if (appointment.status === 'cancelled') throw new Error('该预约已取消');
 
-  const decorated = decorateAppointment(appointment, settings, getChinaNow());
-  if (!decorated.canCancel) throw new Error('预约日期当天及之后不可取消');
+  if (asAdmin) {
+    assertAdmin(openid, settings);
+  } else {
+    if (appointment.userOpenId !== openid) throw new Error('只能取消自己的预约');
+    const decorated = decorateAppointment(appointment, settings, getChinaNow());
+    if (!decorated.canCancel) throw new Error('预约日期当天及之后不可取消');
+  }
 
   await db.collection(APPOINTMENTS_COLLECTION).doc(appointmentId).update({ data: { status: 'cancelled', cancelledAt: db.serverDate() } });
   return { appointmentId };
