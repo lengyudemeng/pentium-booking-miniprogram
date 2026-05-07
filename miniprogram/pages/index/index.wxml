@@ -2,7 +2,7 @@
   <view class="card hero-card">
     <view class="hero-text">
       <view class="hero-title">奔腾特勤队预约服务</view>
-      <view class="hero-subtitle">每周六晚 19:00-21:00 提供值班支持，地点请以实际通知为准。</view>
+      <view class="hero-subtitle">每周六晚 19:00-21:00 梅二五楼活动室</view>
       <view class="hero-btn-row">
         <button class="primary-btn hero-btn hero-btn-half" bindtap="goCreateBooking">立即预约</button>
         <button class="ghost-btn hero-btn hero-btn-half" bindtap="goQueryBooking">查询预约</button>
@@ -12,8 +12,8 @@
   </view>
 
   <view class="card">
-    <view class="section-title">当前选中日期概览</view>
-    <view class="section-subtitle">默认展示最近一次开放预约的周六：{{selectedDateLabel}}</view>
+    <view class="section-title">本周值班概览</view>
+    <view class="section-subtitle">日期：{{selectedDateLabel}}</view>
     <view class="stats-grid top-gap">
       <view class="stat-item">
         <view class="stat-value">{{summary.totalCount}}</view>
@@ -35,7 +35,7 @@
   </view>
 
   <view class="card">
-    <view class="section-title">本学期累计概览</view>
+    <view class="section-title">本学期值班概览</view>
     <view class="section-subtitle">从学期开始日期起统计累计预约与结单数量。</view>
     <view class="stats-grid top-gap">
       <view class="stat-item">
@@ -74,7 +74,6 @@
   <view class="card">
     <view class="section-title">服务说明</view>
     <view class="info-line">1. 当前仅开放周六 19:00-21:00 的两个预约时段，每个时段最多 10 人。</view>
-    <view class="info-line">2. 提交预约前需阅读并同意《隐私政策》《用户协议》。</view>
-    <view class="info-line">3. 服务人员权限已改为管理员审批制，管理员权限已改为 OpenID 白名单控制。</view>
+    <view class="info-line">2. 提交前请阅读并同意《隐私政策》《用户协议》。</view>
   </view>
 </view>

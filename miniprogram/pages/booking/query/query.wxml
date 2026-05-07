@@ -1,7 +1,6 @@
 <view class="page">
   <view class="card">
     <view class="section-title">我的本周预约</view>
-    <view class="section-subtitle">这里展示你本周值班日期的预约记录。</view>
     <view wx:if="{{loading}}" class="empty-text">加载中...</view>
     <view wx:elif="{{weeklyAppointments.length === 0}}" class="empty-text">本周无预约</view>
     <view wx:else class="list-gap top-gap">
@@ -35,13 +34,11 @@
 
   <view class="card">
     <view class="section-title">查询历史预约</view>
-    <view class="section-subtitle">可先选择值班日期后查询，也可一键查看全部历史预约。</view>
 
     <view wx:if="{{loading}}" class="empty-text">加载中...</view>
     <view wx:elif="{{historyAppointments.length === 0}}" class="empty-text">暂无历史预约</view>
     <view wx:else>
       <view class="field">
-        <text class="field-label">选择值班日期</text>
         <picker mode="selector" range="{{historyDateOptions}}" range-key="serviceDateLabel" bindchange="chooseHistoryDate">
           <view class="picker-field">
             <text wx:if="{{selectedHistoryDateLabel}}">{{selectedHistoryDateLabel}}</text>
@@ -55,7 +52,7 @@
         <button class="ghost-btn query-btn" bindtap="queryAllHistory">查询全部预约</button>
       </view>
 
-      <view wx:if="{{historyQueryMode === 'none'}}" class="empty-text">请选择值班日期后进行查询，或点击右侧按钮查看全部历史预约。</view>
+      <view wx:if="{{historyQueryMode === 'none'}}" class="empty-text">可选择值班日期后进行查询，或查看全部历史预约。</view>
       <view wx:elif="{{queryResults.length === 0}}" class="empty-text">{{historyEmptyText}}</view>
       <view wx:else class="list-gap top-gap">
         <block wx:for="{{queryResults}}" wx:key="id">

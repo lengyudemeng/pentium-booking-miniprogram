@@ -28,6 +28,80 @@ const SLOT_ORDER = { slot1: 1, slot2: 2 };
 const TOTAL_CAPACITY_PER_DATE = SLOT_TEMPLATES.length * MAX_APPOINTMENTS_PER_SLOT;
 const ONE_DAY_MS = 24 * 60 * 60 * 1000;
 const CHINA_OFFSET_HOURS = 8;
+const BOOKING_NAME_MAX_LENGTH = 20;
+const BOOKING_REQUEST_MAX_LENGTH = 300;
+const BOOKING_MODERATION_KEYWORDS = [
+  '奶龙',
+  '危害国家安全',
+  '颠覆国家',
+  '颠覆政权',
+  '分裂国家',
+  '煽动分裂',
+  '煽动暴力',
+  '暴力恐怖',
+  '恐怖袭击',
+  '恐怖主义',
+  '极端主义',
+  '邪教组织',
+  '泄露国家秘密',
+  '间谍活动',
+  '贩卖毒品',
+  '贩毒',
+  '制毒',
+  '冰毒',
+  '海洛因',
+  '摇头丸',
+  '大麻交易',
+  '买卖枪支',
+  '非法枪支',
+  '枪支弹药',
+  '制作炸弹',
+  '炸弹教程',
+  '爆炸物制作',
+  '杀人教程',
+  '绑架勒索',
+  '人口贩卖',
+  '洗钱',
+  '诈骗教程',
+  '网络赌博',
+  '赌博网站',
+  '私彩',
+  '招嫖',
+  '裸聊',
+  '约炮',
+  '成人视频',
+  '色情网',
+  '黄色网站',
+  '偷拍视频',
+  '傻逼',
+  '煞笔',
+  '脑残',
+  '废物东西',
+  '去死吧',
+  '去死',
+  '滚蛋',
+  '你妈死了',
+  '操你妈',
+  '草你妈',
+  '艹你妈',
+  '妈卖批',
+  'nmsl',
+  'cnm',
+  '地域黑',
+  '挑起对立',
+  '煽动仇恨',
+  '人身攻击',
+  '恶意辱骂'
+];
+const BOOKING_MODERATION_PATTERNS = [
+  /(?:制作|生成|植入|传播|投放|免杀|远控|贩卖).{0,10}(?:木马|病毒|勒索软件|恶意软件)/i,
+  /(?:木马|病毒|勒索软件|恶意软件).{0,10}(?:制作|生成|植入|传播|投放|免杀|远控|源码)/i,
+  /(?:攻击|入侵|黑掉|渗透|盗取|撞库|脱库).{0,10}(?:网站|服务器|账号|数据库|校园网|内网|系统)/i,
+  /(?:帮我|教我|我要|想要|提供).{0,10}(?:攻击|入侵|盗号|钓鱼|破解|绕过|免杀|炸号|刷量)/i,
+  /(?:ddos|dos攻击|sql注入|xss|getshell|webshell|反弹shell|提权|漏洞利用|暴力破解|撞库|脱库|钓鱼网站|盗号|抓包盗取|远控木马|免杀木马|勒索病毒|肉鸡|僵尸网络)/i
+];
+const DISALLOWED_CONTROL_CHAR_PATTERN = /[\u0000-\u0008\u000B\u000C\u000E-\u001F\u007F]/;
+const MODERATION_SEPARATOR_PATTERN = /[\s\u200B-\u200D\uFEFF\-_=+.,，。！？!?、\\/|'"“”‘’`~@#$%^&*:;；：<>()（）\[\]【】{}《》]/g;
 
 function getChinaNow() {
   return new Date();
@@ -91,6 +165,85 @@ function escapeHtml(value = '') {
     .replace(/>/g, '&gt;')
     .replace(/"/g, '&quot;')
     .replace(/'/g, '&#39;');
+}
+
+function normalizeBookingText(value) {
+  const text = String(value || '');
+  const normalized = typeof text.normalize === 'function' ? text.normalize('NFKC') : text;
+  return normalized
+    .replace(/[\u200B-\u200D\uFEFF]/g, '')
+    .replace(/\r\n?/g, '\n')
+    .replace(/[ \t\f\v]+/g, ' ')
+    .replace(/\n{3,}/g, '\n\n')
+    .trim();
+}
+
+function countTextLength(value) {
+  return Array.from(String(value || '')).length;
+}
+
+function normalizeForModeration(value) {
+  return normalizeBookingText(value)
+    .toLowerCase()
+    .replace(MODERATION_SEPARATOR_PATTERN, '');
+}
+
+function hasBlockedBookingContent(value) {
+  const text = normalizeForModeration(value);
+  return BOOKING_MODERATION_KEYWORDS.some((keyword) => text.includes(normalizeForModeration(keyword)))
+    || BOOKING_MODERATION_PATTERNS.some((pattern) => pattern.test(text));
+}
+
+function getBookingContentError({ name = '', request = '' } = {}) {
+  const normalizedName = normalizeBookingText(name);
+  const normalizedRequest = normalizeBookingText(request);
+  if (DISALLOWED_CONTROL_CHAR_PATTERN.test(String(name || '')) || DISALLOWED_CONTROL_CHAR_PATTERN.test(String(request || ''))) {
+    return '请删除不可见特殊字符后再提交';
+  }
+  if (countTextLength(normalizedName) > BOOKING_NAME_MAX_LENGTH) {
+    return `姓名最多 ${BOOKING_NAME_MAX_LENGTH} 个字`;
+  }
+  if (countTextLength(normalizedRequest) > BOOKING_REQUEST_MAX_LENGTH) {
+    return `预约需求最多 ${BOOKING_REQUEST_MAX_LENGTH} 个字`;
+  }
+  if (hasBlockedBookingContent(normalizedName) || hasBlockedBookingContent(normalizedRequest)) {
+    return '姓名或预约需求包含不适宜提交的内容';
+  }
+  return '';
+}
+
+function isMsgSecCheckBlocked(result = {}) {
+  return result.errCode === 87014
+    || result.errcode === 87014
+    || (result.result && result.result.suggest && result.result.suggest !== 'pass')
+    || (result.result && result.result.label && result.result.label !== 100);
+}
+
+async function assertMessageContentSafe(openid, content) {
+  if (!content) {
+    return;
+  }
+  if (!cloud.openapi || !cloud.openapi.security || !cloud.openapi.security.msgSecCheck) {
+    throw new Error('内容安全检测暂时不可用，请稍后再试');
+  }
+
+  try {
+    const result = await cloud.openapi.security.msgSecCheck({
+      openid,
+      scene: 2,
+      version: 2,
+      content
+    });
+    if (isMsgSecCheckBlocked(result)) {
+      throw new Error('内容安全检测未通过，请修改后再提交');
+    }
+  } catch (error) {
+    if (error && (error.errCode === 87014 || error.errcode === 87014 || error.message === '内容安全检测未通过，请修改后再提交')) {
+      throw new Error('内容安全检测未通过，请修改后再提交');
+    }
+    console.warn('msgSecCheck skipped:', error && (error.errMsg || error.message || error));
+    throw new Error('内容安全检测暂时不可用，请稍后再试');
+  }
 }
 
 function getChinaDateStart(date) {
@@ -813,6 +966,8 @@ function validateBookingInput(payload = {}) {
   if (!name || !name.trim()) throw new Error('请输入姓名');
   if (!/^1\d{10}$/.test((phone || '').trim())) throw new Error('请输入正确的11位手机号');
   if (!request || !request.trim()) throw new Error('请输入预约需求');
+  const contentError = getBookingContentError({ name, request });
+  if (contentError) throw new Error(contentError);
   if (!privacyConsent) throw new Error('请先阅读并同意《隐私政策》');
   if (!agreementConsent) throw new Error('请先阅读并同意《用户协议》');
 }
@@ -1453,6 +1608,9 @@ async function exportDutyCheckInReport(openid, event = {}) {
 
 async function createAppointment(openid, event) {
   validateBookingInput(event);
+  const normalizedName = normalizeBookingText(event.name);
+  const normalizedRequest = normalizeBookingText(event.request);
+  await assertMessageContentSafe(openid, `${normalizedName}\n${normalizedRequest}`);
   const settings = await ensureSettings();
   const now = getChinaNow();
   const scheduleInfo = getScheduleInfoByServiceDate(event.serviceDate, settings);
@@ -1494,9 +1652,9 @@ async function createAppointment(openid, event) {
       slotId: targetSlot.id,
       slotLabel: targetSlot.label,
       appointmentType: event.appointmentType.trim(),
-      name: event.name.trim(),
+      name: normalizedName,
       phone: event.phone.trim(),
-      request: event.request.trim(),
+      request: normalizedRequest,
       privacyConsent: true,
       agreementConsent: true,
       status: 'booked',

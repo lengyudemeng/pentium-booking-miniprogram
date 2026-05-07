@@ -1,4 +1,5 @@
 const service = require('../../../utils/service');
+const share = require('../../../utils/share');
 const SLOT_ORDER = { slot1: 1, slot2: 2 };
 
 function parseDateParts(serviceDate = '') {
@@ -75,6 +76,7 @@ Page({
   },
 
   onShow() {
+    share.enableShareMenu();
     this.loadData();
   },
 
@@ -185,5 +187,13 @@ Page({
     } finally {
       this.setData({ cancelingId: '' });
     }
+  },
+
+  onShareAppMessage() {
+    return share.getShareAppMessageConfig();
+  },
+
+  onShareTimeline() {
+    return share.getShareTimelineConfig();
   }
 });

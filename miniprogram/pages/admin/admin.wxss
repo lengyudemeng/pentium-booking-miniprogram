@@ -84,6 +84,8 @@
   margin-top: 8rpx;
   color: #6b7280;
   line-height: 1.7;
+  overflow-wrap: anywhere;
+  word-break: break-all;
 }
 
 .record-title {

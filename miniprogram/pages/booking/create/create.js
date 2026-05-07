@@ -1,5 +1,126 @@
 const service = require('../../../utils/service');
 const legal = require('../../../utils/legal');
+const share = require('../../../utils/share');
+
+const BOOKING_NAME_MAX_LENGTH = 20;
+const BOOKING_REQUEST_MAX_LENGTH = 300;
+const BOOKING_MODERATION_KEYWORDS = [
+  '奶龙',
+  '危害国家安全',
+  '颠覆国家',
+  '颠覆政权',
+  '分裂国家',
+  '煽动分裂',
+  '煽动暴力',
+  '暴力恐怖',
+  '恐怖袭击',
+  '恐怖主义',
+  '极端主义',
+  '邪教组织',
+  '泄露国家秘密',
+  '间谍活动',
+  '贩卖毒品',
+  '贩毒',
+  '制毒',
+  '冰毒',
+  '海洛因',
+  '摇头丸',
+  '大麻交易',
+  '买卖枪支',
+  '非法枪支',
+  '枪支弹药',
+  '制作炸弹',
+  '炸弹教程',
+  '爆炸物制作',
+  '杀人教程',
+  '绑架勒索',
+  '人口贩卖',
+  '洗钱',
+  '诈骗教程',
+  '网络赌博',
+  '赌博网站',
+  '私彩',
+  '招嫖',
+  '裸聊',
+  '约炮',
+  '成人视频',
+  '色情网',
+  '黄色网站',
+  '偷拍视频',
+  '傻逼',
+  '煞笔',
+  '脑残',
+  '废物东西',
+  '去死吧',
+  '去死',
+  '滚蛋',
+  '你妈死了',
+  '操你妈',
+  '草你妈',
+  '艹你妈',
+  '妈卖批',
+  'nmsl',
+  'cnm',
+  '地域黑',
+  '挑起对立',
+  '煽动仇恨',
+  '人身攻击',
+  '恶意辱骂'
+];
+const BOOKING_MODERATION_PATTERNS = [
+  /(?:制作|生成|植入|传播|投放|免杀|远控|贩卖).{0,10}(?:木马|病毒|勒索软件|恶意软件)/i,
+  /(?:木马|病毒|勒索软件|恶意软件).{0,10}(?:制作|生成|植入|传播|投放|免杀|远控|源码)/i,
+  /(?:攻击|入侵|黑掉|渗透|盗取|撞库|脱库).{0,10}(?:网站|服务器|账号|数据库|校园网|内网|系统)/i,
+  /(?:帮我|教我|我要|想要|提供).{0,10}(?:攻击|入侵|盗号|钓鱼|破解|绕过|免杀|炸号|刷量)/i,
+  /(?:ddos|dos攻击|sql注入|xss|getshell|webshell|反弹shell|提权|漏洞利用|暴力破解|撞库|脱库|钓鱼网站|盗号|抓包盗取|远控木马|免杀木马|勒索病毒|肉鸡|僵尸网络)/i
+];
+const DISALLOWED_CONTROL_CHAR_PATTERN = /[\u0000-\u0008\u000B\u000C\u000E-\u001F\u007F]/;
+const MODERATION_SEPARATOR_PATTERN = /[\s\u200B-\u200D\uFEFF\-_=+.,，。！？!?、\\/|'"“”‘’`~@#$%^&*:;；：<>()（）\[\]【】{}《》]/g;
+
+function normalizeBookingText(value) {
+  const text = String(value || '');
+  const normalized = typeof text.normalize === 'function' ? text.normalize('NFKC') : text;
+  return normalized
+    .replace(/[\u200B-\u200D\uFEFF]/g, '')
+    .replace(/\r\n?/g, '\n')
+    .replace(/[ \t\f\v]+/g, ' ')
+    .replace(/\n{3,}/g, '\n\n')
+    .trim();
+}
+
+function countTextLength(value) {
+  return Array.from(String(value || '')).length;
+}
+
+function normalizeForModeration(value) {
+  return normalizeBookingText(value)
+    .toLowerCase()
+    .replace(MODERATION_SEPARATOR_PATTERN, '');
+}
+
+function hasBlockedBookingContent(value) {
+  const text = normalizeForModeration(value);
+  return BOOKING_MODERATION_KEYWORDS.some((keyword) => text.includes(normalizeForModeration(keyword)))
+    || BOOKING_MODERATION_PATTERNS.some((pattern) => pattern.test(text));
+}
+
+function getBookingContentError(form) {
+  const name = normalizeBookingText(form.name);
+  const request = normalizeBookingText(form.request);
+  if (DISALLOWED_CONTROL_CHAR_PATTERN.test(String(form.name || '')) || DISALLOWED_CONTROL_CHAR_PATTERN.test(String(form.request || ''))) {
+    return '请删除不可见特殊字符后再提交';
+  }
+  if (countTextLength(name) > BOOKING_NAME_MAX_LENGTH) {
+    return `姓名最多 ${BOOKING_NAME_MAX_LENGTH} 个字`;
+  }
+  if (countTextLength(request) > BOOKING_REQUEST_MAX_LENGTH) {
+    return `预约需求最多 ${BOOKING_REQUEST_MAX_LENGTH} 个字`;
+  }
+  if (hasBlockedBookingContent(name) || hasBlockedBookingContent(request)) {
+    return '姓名或需求包含不适宜提交的内容';
+  }
+  return '';
+}
 
 Page({
   data: {
@@ -55,6 +176,7 @@ Page({
   },
 
   onShow() {
+    share.enableShareMenu();
     this.loadData();
   },
 
@@ -278,11 +400,21 @@ Page({
       wx.showToast({ title: '请先同意用户协议', icon: 'none' });
       return;
     }
+    const contentError = getBookingContentError(this.data.form);
+    if (contentError) {
+      wx.showToast({ title: contentError, icon: 'none' });
+      return;
+    }
 
     this.setData({ submitting: true });
     try {
-      const payload = {
+      const normalizedForm = {
         ...this.data.form,
+        name: normalizeBookingText(this.data.form.name),
+        request: normalizeBookingText(this.data.form.request)
+      };
+      const payload = {
+        ...normalizedForm,
         serviceDate: this.data.selectedDate,
         privacyConsent: this.data.agreements.privacyConsent,
         agreementConsent: this.data.agreements.agreementConsent
@@ -341,5 +473,17 @@ Page({
     } finally {
       this.setData({ cancelingId: '' });
     }
+  },
+
+  onShareAppMessage() {
+    return share.getShareAppMessageConfig({
+      title: '预约奔腾特勤队周六服务'
+    });
+  },
+
+  onShareTimeline() {
+    return share.getShareTimelineConfig({
+      title: '预约奔腾特勤队周六服务'
+    });
   }
 });

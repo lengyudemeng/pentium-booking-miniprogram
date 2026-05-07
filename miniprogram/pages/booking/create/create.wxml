@@ -143,7 +143,7 @@
     </view>
     <view class="field">
       <text class="field-label">姓名</text>
-      <input class="field-input" placeholder="请输入姓名" value="{{form.name}}" bindinput="updateName" />
+      <input class="field-input" maxlength="20" placeholder="请输入姓名" value="{{form.name}}" bindinput="updateName" />
     </view>
     <view class="field">
       <text class="field-label">手机号</text>
@@ -151,7 +151,7 @@
     </view>
     <view class="field">
       <text class="field-label">预约需求</text>
-      <textarea class="field-textarea" placeholder="请简要描述你的预约需求，例如设备型号、故障情况、希望处理内容等" value="{{form.request}}" bindinput="updateRequest"></textarea>
+      <textarea class="field-textarea" maxlength="300" placeholder="请简要描述你的预约需求，例如设备型号、故障情况、希望处理内容等" value="{{form.request}}" bindinput="updateRequest"></textarea>
     </view>
 
     <view class="agreement-box">

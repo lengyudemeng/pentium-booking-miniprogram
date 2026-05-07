@@ -1,4 +1,5 @@
 const service = require('../../utils/service');
+const share = require('../../utils/share');
 
 Page({
   data: {
@@ -26,6 +27,7 @@ Page({
   },
 
   onShow() {
+    share.enableShareMenu();
     this.loadData();
   },
 
@@ -114,5 +116,13 @@ Page({
     wx.navigateTo({
       url: '/pages/admin/admin'
     });
+  },
+
+  onShareAppMessage() {
+    return share.getShareAppMessageConfig();
+  },
+
+  onShareTimeline() {
+    return share.getShareTimelineConfig();
   }
 });
